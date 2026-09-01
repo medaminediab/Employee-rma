@@ -1610,13 +1610,19 @@
 
         /* Confirmation obligatoire du pointage par scan */
         .scan-confirmation-overlay {
-            z-index: 2000 !important;
+            position: fixed !important;
+            inset: 0 !important;
+            z-index: 2147483647 !important;
+            display: none !important;
             pointer-events: none;
+            align-items: center !important;
+            justify-content: center !important;
+            background: rgba(0,0,0,.78) !important;
         }
 
         .scan-confirmation-overlay.show {
             display: flex !important;
-            pointer-events: auto;
+            pointer-events: auto !important;
         }
 
         .scan-confirmation-modal {
@@ -2331,7 +2337,6 @@
                             <span class="scan-line"></span>
                         </div>
                     </div>
-                    <div class="scan-camera-hint"><i class="fas fa-camera"></i> Placez le QR code ou le code à barres du badge dans le cadre du scanner.</div>
                     <div class="scan-camera-actions">
                         <button type="button" class="btn btn-primary" id="startCameraBtn" onclick="startBarcodeCamera()">
                             <i class="fas fa-barcode"></i> Scanner
@@ -3887,6 +3892,8 @@ let scanFallbackCanvas = null;
 let scanFallbackContext = null;
 let scanPending = null;
 let scanScanLocked = false;
+let scanDetectionTimer = null;
+let scanDetectionRunning = false;
 
 
 function normalizeScannedCode(value) {
@@ -4054,14 +4061,17 @@ async function startBarcodeCamera() {
         const detectLoop = async () => {
             if (!scanCameraActive) return;
 
-            // Pendant la confirmation, aucune nouvelle detection n'est effectuee.
-            if (scanPending) {
-                if (scanCameraActive) setTimeout(detectLoop, 180);
+            // VERROU ABSOLU : dès qu'un badge est détecté, aucune autre lecture
+            // ne doit être traitée tant que l'utilisateur n'a pas répondu Oui/Non.
+            if (scanScanLocked || scanPending) {
+                scanDetectionTimer = setTimeout(detectLoop, 180);
                 return;
             }
 
-            let code = null;
+            if (scanDetectionRunning) return;
+            scanDetectionRunning = true;
 
+            let code = null;
             try {
                 if (scanCodeReader && scanCodeReader.detector) {
                     const codes = await scanCodeReader.detector.detect(video);
@@ -4069,23 +4079,25 @@ async function startBarcodeCamera() {
                 }
             } catch (e) {}
 
-            // Secours local specifique au CODE39 des badges PointagePro.
             if (!code) {
                 try { code = decodeCode39FromVideo(video); } catch (e) { code = null; }
             }
 
-            if (code && !scanPending) {
+            if (code && !scanScanLocked && !scanPending) {
                 const now = Date.now();
                 if (!(code === scanCameraLastCode && now - scanCameraLastTime < 1800)) {
                     scanCameraLastCode = code;
                     scanCameraLastTime = now;
+                    // Verrouiller AVANT d'afficher la confirmation pour empêcher
+                    // une seconde détection pendant le même cycle caméra.
+                    scanScanLocked = true;
                     processBarcodeScan(code);
                 }
             }
 
-            if (scanCameraActive) setTimeout(detectLoop, 180);
+            scanDetectionRunning = false;
+            if (scanCameraActive) scanDetectionTimer = setTimeout(detectLoop, 180);
         };
-
         detectLoop();
     } catch (e) {
         scanCameraActive = false;
@@ -4112,6 +4124,8 @@ function stopBarcodeCamera() {
     // Si une confirmation est ouverte, l'annulation est necessaire avant d'arreter le scanner.
     if (scanPending) cancelPendingScan(true);
     scanCameraActive = false;
+    if (scanDetectionTimer) { clearTimeout(scanDetectionTimer); scanDetectionTimer = null; }
+    scanDetectionRunning = false;
 
     try {
         if (scanCodeReader && scanCodeReader.stream) {
@@ -4137,26 +4151,41 @@ function stopBarcodeCamera() {
 }
 
 function showScanConfirmation(emp, actionType, actionLabel, now, isLate, code) {
-    scanPending = { empId: emp.id, code, actionType, actionLabel, now, isLate };
-    // Bloquer immédiatement toute nouvelle lecture jusqu'au choix Oui/Non.
+    // Le verrou est posé AVANT toute interaction avec l'interface.
     scanScanLocked = true;
+    scanPending = { empId: emp.id, code, actionType, actionLabel, now, isLate };
 
     const overlay = document.getElementById('scanConfirmationOverlay');
     const textEl = document.getElementById('scanConfirmationText');
     const detailsEl = document.getElementById('scanConfirmationDetails');
     const statusEl = document.getElementById('scanStatus');
 
+    if (!overlay || !textEl || !detailsEl) {
+        // Ne jamais enregistrer sans confirmation visible.
+        scanPending = null;
+        scanScanLocked = false;
+        if (statusEl) {
+            statusEl.className = 'scan-status error';
+            statusEl.innerHTML = '<i class="fas fa-times-circle"></i><span>Impossible d\'afficher la confirmation. Aucun pointage n\'a été enregistré.</span>';
+        }
+        return;
+    }
+
     textEl.textContent = 'Enregistrer ' + actionLabel.toLowerCase() + ' pour ' + emp.nom + ' ?';
-    detailsEl.innerHTML = '<strong>Matricule :</strong> ' + emp.matricule + '<br><strong>Heure :</strong> ' + now + (isLate ? '<br><strong style=\"color:var(--danger)\">Retard</strong>' : '');
+    detailsEl.innerHTML = '<strong>Matricule :</strong> ' + emp.matricule + '<br><strong>Heure :</strong> ' + now + (isLate ? '<br><strong style="color:var(--danger)">Retard</strong>' : '');
+
+    // Affichage forcé au-dessus de toute l'application/WebView.
+    overlay.style.setProperty('display', 'flex', 'important');
+    overlay.style.setProperty('position', 'fixed', 'important');
+    overlay.style.setProperty('inset', '0', 'important');
+    overlay.style.setProperty('z-index', '2147483647', 'important');
+    overlay.style.setProperty('pointer-events', 'auto', 'important');
     overlay.classList.add('show');
-    overlay.style.display = 'flex';
 
-    // Le scan est bloque jusqu'a Oui ou Non, sans arreter la camera.
     statusEl.className = 'scan-status paused';
-    statusEl.innerHTML = '<i class="fas fa-hourglass-half"></i><span>SCAN BLOQUE — choisissez Oui ou Non pour poursuivre.</span>';
+    statusEl.innerHTML = '<i class="fas fa-lock"></i><span>SCAN BLOQUÉ — répondez Oui ou Non.</span>';
 
-    // Vibration courte si disponible.
-    try { if (navigator.vibrate) navigator.vibrate(120); } catch (e) {}
+    try { if (navigator.vibrate) navigator.vibrate(150); } catch (e) {}
 }
 
 function confirmPendingScan() {
@@ -4229,9 +4258,11 @@ function confirmPendingScan() {
     saveData();
 
     overlay.classList.remove('show');
-    overlay.style.display = 'none';
+    overlay.style.setProperty('display', 'none', 'important');
     scanPending = null;
     scanScanLocked = false;
+    scanDetectionRunning = false;
+    if (scanDetectionTimer) { clearTimeout(scanDetectionTimer); scanDetectionTimer = null; }
 
     const color = getAvatarColor(emp.id);
     const avatarContent = emp.photo ? '<img src="' + emp.photo + '">' : getInitials(emp.nom);
@@ -4267,7 +4298,9 @@ function cancelPendingScan(fromStop) {
     scanScanLocked = false;
     const overlay = document.getElementById('scanConfirmationOverlay');
     const statusEl = document.getElementById('scanStatus');
-    if (overlay) { overlay.classList.remove('show'); overlay.style.display = 'none'; }
+    if (overlay) { overlay.classList.remove('show'); overlay.style.setProperty('display', 'none', 'important'); }
+    if (scanDetectionTimer) { clearTimeout(scanDetectionTimer); scanDetectionTimer = null; }
+    scanDetectionRunning = false;
 
     if (!fromStop && scanCameraActive) {
         statusEl.className = 'scan-status idle';
@@ -4298,6 +4331,7 @@ function processBarcodeScan(code) {
         statusEl.innerHTML = '<i class="fas fa-times-circle"></i><span>Code non reconnu : ' + code + '</span>';
         cardEl.classList.remove('show');
         addScanLogEntry(code, 'Inconnu', '', 'error');
+        scanScanLocked = false;
         // Reprendre automatiquement le scan apres un code invalide.
         setTimeout(() => {
             if (scanCameraActive && !scanPending) {
@@ -4333,6 +4367,7 @@ function processBarcodeScan(code) {
         statusEl.innerHTML = '<i class="fas fa-exclamation-circle"></i><span>' + emp.nom + ' — Deja pointe entree et sortie aujourd\'hui</span>';
         cardEl.classList.remove('show');
         addScanLogEntry(code, emp.nom, '', 'skip');
+        scanScanLocked = false;
         return;
     }
 
