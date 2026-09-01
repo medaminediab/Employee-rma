@@ -2013,7 +2013,7 @@
                             <table class="data-table">
                                 <thead>
                                     <tr>
-                                        <th>Date</th><th>Matricule</th><th>Entrée</th><th>Sortie</th><th>Durée travaillée</th><th>Heures supplémentaires</th><th>Statut</th><th>Actions</th>
+                                        <th>Matricule</th><th>Employe</th><th>Departement</th><th>Date</th><th>Entrée</th><th>Sortie</th><th>Durée</th><th>Heures sup. totales</th><th>Statut</th><th>Code-barres</th><th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody id="barcodeAttendanceTableBody"></tbody>
@@ -2155,6 +2155,7 @@
                                 <th>Duree</th>
                                 <th>Heures sup. totales</th>
                                 <th>Statut</th>
+                                <th>Code-barres</th>
                             </tr>
                         </thead>
                         <tbody id="histTableBody">
@@ -3325,7 +3326,7 @@ function renderEmployees() {
     );
 
     if (filtered.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="9"><div class="empty-state"><i class="fas fa-users"></i><p>Aucun employe trouve</p></div></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="10"><div class="empty-state"><i class="fas fa-users"></i><p>Aucun employe trouve</p></div></td></tr>';
         return;
     }
 
@@ -3674,6 +3675,7 @@ function syncBarcodeStorage() {
                 id: p.id || ('scan_' + date + '_' + empId),
                 date,
                 matricule: String(emp.matricule || '').trim(),
+                codeBarres: String(p.codeBarres || emp.matricule || '').trim(),
                 entree: p.entree || '',
                 sortie: p.sortie || ''
             });
@@ -3689,7 +3691,7 @@ function getScannerTodayRecords() {
         const p = tp[empId];
         const emp = employees.find(e => e.id === empId);
         if (!emp || !p || !p.entree) return null;
-        return { id: p.id || ('scan_' + today + '_' + empId), date: today, empId, matricule: emp.matricule, entree: p.entree, sortie: p.sortie || '' };
+        return { id: p.id || ('scan_' + today + '_' + empId), date: today, empId, matricule: emp.matricule, nom: emp.nom, dept: emp.dept, codeBarres: String(p.codeBarres || emp.matricule || '').trim(), entree: p.entree, sortie: p.sortie || '', status: p.status };
     }).filter(Boolean).sort((a,b) => b.entree.localeCompare(a.entree));
 }
 
@@ -3840,7 +3842,7 @@ function handleBarcodeDetected(rawValue) {
         return;
     }
 
-    pendingBarcodePointage = { empId: emp.id, matricule: emp.matricule, operation, heure: timeStr() };
+    pendingBarcodePointage = { empId: emp.id, matricule: emp.matricule, codeBarres: rawValue, operation, heure: timeStr() };
     stopBarcodeScanner();
     document.getElementById('barcodePointageConfirmMessage').textContent = 'Confirmer le pointage ? Matricule : ' + emp.matricule + ' — Opération : ' + operation;
     openModal('barcodePointageConfirmModal');
@@ -3864,7 +3866,7 @@ function confirmBarcodePointage() {
             showToast('Une entrée ouverte existe déjà pour ce matricule.', 'warning');
             pendingBarcodePointage = null; closeModal('barcodePointageConfirmModal'); startBarcodeScanner(); return;
         }
-        tp[emp.id] = { id: 'scan_' + Date.now() + '_' + emp.id, entree: now, sortie: null, status: isLate ? 'retard' : 'present' };
+        tp[emp.id] = { id: 'scan_' + Date.now() + '_' + emp.id, codeBarres: pending.codeBarres || pending.matricule, entree: now, sortie: null, status: isLate ? 'retard' : 'present' };
         activities.unshift({ type: isLate ? 'late' : 'in', text: '<strong>' + emp.nom + '</strong> entrée par scanner à ' + now + (isLate ? ' (retard)' : ''), time: now });
         if (activities.length > 50) activities.pop();
         showToast('Entrée enregistrée', isLate ? 'warning' : 'success');
@@ -3935,19 +3937,26 @@ function renderBarcodeAttendanceTable() {
     updateBarcodeScannerDate();
     const rows = getScannerTodayRecords();
     if (!rows.length) {
-        tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state"><i class="fas fa-clock"></i><p>Aucun pointage aujourd’hui.</p></div></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="11"><div class="empty-state"><i class="fas fa-clock"></i><p>Aucun pointage aujourd’hui.</p></div></td></tr>';
         return;
     }
     tbody.innerHTML = rows.map(r => {
+        const emp = employees.find(e => e.id === r.empId);
         const worked = r.sortie ? formatWorkedBarcode(calcWorkedMinutesBarcode(r.entree, r.sortie)) : '--';
         const overtime = formatWorkedBarcode(calcBarcodeOvertimeMinutes(r.sortie));
+        const status = r.sortie ? 'Terminé' : (r.status === 'retard' ? 'Retard' : 'En cours');
+        const statusClass = r.sortie ? 'badge-parti' : (r.status === 'retard' ? 'badge-retard' : 'badge-present');
         return '<tr>' +
-            '<td>' + r.date + '</td>' +
             '<td style="font-family:Space Grotesk,monospace;font-weight:600;color:var(--accent);font-size:12px;">' + r.matricule + '</td>' +
-            '<td style="font-family:Space Grotesk,monospace;">' + r.entree + '</td>' +
-            '<td style="font-family:Space Grotesk,monospace;">' + (r.sortie || '--') + '</td>' +
-            '<td>' + worked + '</td><td>' + overtime + '</td>' +
-            '<td><span class="badge ' + (r.sortie ? 'badge-parti' : 'badge-present') + '"><span class="badge-dot"></span> ' + barcodeStatus(r) + '</span></td>' +
+            '<td><div class="emp-cell"><div class="emp-avatar" style="background:' + getAvatarColor(r.empId) + '">' + (emp && emp.photo ? '<img src="' + emp.photo + '">' : getInitials(r.nom || '')) + '</div><div><div class="emp-name">' + (r.nom || '') + '</div></div></div></td>' +
+            '<td>' + (r.dept || '') + '</td>' +
+            '<td style="font-size:12px;">' + r.date + '</td>' +
+            '<td style="font-family:Space Grotesk,monospace;font-size:13px;">' + r.entree + '</td>' +
+            '<td style="font-family:Space Grotesk,monospace;font-size:13px;">' + (r.sortie || '--') + '</td>' +
+            '<td style="font-family:Space Grotesk,monospace;font-size:13px;">' + worked + '</td>' +
+            '<td style="font-family:Space Grotesk,monospace;font-size:13px;">' + overtime + '</td>' +
+            '<td><span class="badge ' + statusClass + '"><span class="badge-dot"></span> ' + status + '</span></td>' +
+            '<td style="font-family:Space Grotesk,monospace;font-weight:600;font-size:12px;">' + (r.codeBarres || '') + '</td>' +
             '<td><div class="actions-cell">' +
             '<button class="btn-icon edit" title="Modifier" onclick="openBarcodeEdit(\'' + r.empId + '\')"><i class="fas fa-pen"></i></button>' +
             '<button class="btn-icon delete" title="Supprimer" onclick="askBarcodeDelete(\'' + r.empId + '\')"><i class="fas fa-trash"></i></button>' +
@@ -4038,12 +4047,12 @@ function buildBarcodeTodayRows() {
         const emp = employees.find(e => e.id === r.empId);
         const worked = r.sortie ? formatWorkedBarcode(calcWorkedMinutesBarcode(r.entree,r.sortie)) : '--';
         const overtime = formatWorkedBarcode(calcBarcodeOvertimeMinutes(r.sortie));
-        return [r.date, r.matricule, r.entree, r.sortie || '', worked, overtime, barcodeStatus(r)];
+        return [r.matricule, r.nom || '', r.dept || '', r.date, r.entree, r.sortie || '', worked, overtime, barcodeStatus(r), r.codeBarres || r.matricule || ''];
     });
 }
 
 function exportTodayBarcodeAttendance() {
-    const rows = [['Date','Matricule','Heure d’entrée','Heure de sortie','Durée travaillée','Heures supplémentaires','Statut'], ...buildBarcodeTodayRows()];
+    const rows = [['Matricule','Employe','Departement','Date','Entree','Sortie','Duree','Heures sup. totales','Statut','Code-barres'], ...buildBarcodeTodayRows()];
     if (rows.length === 1) { showToast('Aucun pointage à exporter.','warning'); return; }
     createSimpleXlsx(rows, 'pointages_du_jour_' + todayStr() + '.xlsx');
     showToast('Pointages du jour exportés vers Excel');
@@ -4312,6 +4321,7 @@ function renderHistory() {
                 '<td style="font-family:Space Grotesk,monospace;font-size:13px;">' + calcDuration(r.entree, r.sortie) + '</td>' +
                 '<td style="font-family:Space Grotesk,monospace;font-size:13px;font-weight:600;color:' + (overtime > 0 ? 'var(--warning)' : 'var(--fg-muted)') + ';">' + formatMinutes(overtime) + '</td>' +
                 '<td>' + statusBadge + '</td>' +
+                '<td style="font-family:Space Grotesk,monospace;font-weight:600;font-size:12px;">' + (r.codeBarres || r.emp.matricule || '') + '</td>' +
             '</tr>';
         }).join('');
     }
