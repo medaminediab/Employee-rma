@@ -4418,17 +4418,45 @@ function loadBarcodeGoogleConfig() {
 }
 
 async function sendBarcodeAttendanceToGoogleSheets() {
-    let cfg={}; try{cfg=JSON.parse(localStorage.getItem('pp_scanner_google_config'))||{};}catch(e){}
+    let cfg={};
+    try { cfg=JSON.parse(localStorage.getItem('pp_scanner_google_config'))||{}; } catch(e) {}
     const url=(document.getElementById('scannerGoogleWebAppUrl').value.trim() || cfg.WEB_APP_URL || '').trim();
-    const sheetId=document.getElementById('scannerGoogleSheetId').value.trim() || cfg.SHEET_ID || '';
-    const sheetName=document.getElementById('scannerGoogleSheetName').value.trim() || cfg.SHEET_NAME || '';
-    if (!url) { showToast('Connexion Google Sheets non configurée.','warning'); return; }
+    const sheetId=(document.getElementById('scannerGoogleSheetId').value.trim() || cfg.SHEET_ID || '').trim();
+    const sheetName=(document.getElementById('scannerGoogleSheetName').value.trim() || cfg.SHEET_NAME || '').trim();
+    if (!url) { showToast('URL Google Apps Script non configurée.','warning'); return; }
+    if (!/^https:\/\/script\.google\.com\/macros\/s\/[^\s]+\/exec(?:\?.*)?$/i.test(url)) {
+        showToast('URL invalide : utilisez l'URL Web App qui se termine par /exec.','warning');
+        return;
+    }
+    const rawRecords=getScannerTodayRecords();
+    if (!rawRecords.length) { showToast('Aucun pointage à envoyer pour aujourd'hui.','warning'); return; }
+    const records=rawRecords.map(r=>{
+        const emp=employees.find(e=>String(e.matricule||'').trim()===String(r.matricule||'').trim())||{};
+        return {
+            id:r.id||'', date:r.date||todayStr(), matricule:r.matricule||'',
+            employe:emp.nom||'', departement:emp.dept||'', poste:emp.poste||'',
+            entree:r.entree||'', sortie:r.sortie||'',
+            dureeTravaillee:r.sortie?formatWorkedBarcode(calcWorkedMinutesBarcode(r.entree,r.sortie)):'--',
+            heuresSupplementaires:formatWorkedBarcode(calcBarcodeOvertimeMinutes(r.sortie)),
+            statut:barcodeStatus(r), codeBarres:r.matricule||''
+        };
+    });
     try {
-        const records=getScannerTodayRecords().map(r=>({id:r.id,date:r.date,matricule:r.matricule,entree:r.entree,sortie:r.sortie||'',dureeTravaillee:r.sortie?formatWorkedBarcode(calcWorkedMinutesBarcode(r.entree,r.sortie)):'--',heuresSupplementaires:formatWorkedBarcode(calcBarcodeOvertimeMinutes(r.sortie)),statut:barcodeStatus(r)}));
-        const response=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'appendAttendance',spreadsheetId:sheetId,sheetName,records})});
-        if(!response.ok) throw new Error('HTTP '+response.status);
-        showToast('✅ Pointages envoyés à Google Sheets.');
-    } catch(e) { showToast('❌ Envoi Google Sheets impossible.','error'); }
+        showToast('Envoi vers Google Sheets en cours...','warning');
+        const response=await fetch(url,{
+            method:'POST',
+            headers:{'Content-Type':'text/plain;charset=utf-8'},
+            body:JSON.stringify({action:'appendAttendance',spreadsheetId:sheetId,sheetName:sheetName||'Pointages',records})
+        });
+        const text=await response.text();
+        let result={};
+        try { result=JSON.parse(text); } catch(e) {}
+        if(!response.ok || result.success===false) throw new Error(result.message||('HTTP '+response.status));
+        showToast('✅ '+(result.message||'Pointages envoyés à Google Sheets.'));
+    } catch(e) {
+        console.error('Google Sheets:',e);
+        showToast('❌ Envoi Google Sheets impossible : '+(e.message||'vérifiez l'URL, le déploiement et les autorisations.'),'error');
+    }
 }
 
 // ============================================================
