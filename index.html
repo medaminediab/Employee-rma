@@ -4425,11 +4425,11 @@ async function sendBarcodeAttendanceToGoogleSheets() {
     const sheetName=(document.getElementById('scannerGoogleSheetName').value.trim() || cfg.SHEET_NAME || '').trim();
     if (!url) { showToast('URL Google Apps Script non configurée.','warning'); return; }
     if (!/^https:\/\/script\.google\.com\/macros\/s\/[^\s]+\/exec(?:\?.*)?$/i.test(url)) {
-        showToast('URL invalide : utilisez l'URL Web App qui se termine par /exec.','warning');
+        showToast("URL invalide : utilisez l'URL Web App qui se termine par /exec.",'warning');
         return;
     }
     const rawRecords=getScannerTodayRecords();
-    if (!rawRecords.length) { showToast('Aucun pointage à envoyer pour aujourd'hui.','warning'); return; }
+    if (!rawRecords.length) { showToast("Aucun pointage à envoyer pour aujourd'hui.",'warning'); return; }
     const records=rawRecords.map(r=>{
         const emp=employees.find(e=>String(e.matricule||'').trim()===String(r.matricule||'').trim())||{};
         return {
@@ -4455,7 +4455,7 @@ async function sendBarcodeAttendanceToGoogleSheets() {
         showToast('✅ '+(result.message||'Pointages envoyés à Google Sheets.'));
     } catch(e) {
         console.error('Google Sheets:',e);
-        showToast('❌ Envoi Google Sheets impossible : '+(e.message||'vérifiez l'URL, le déploiement et les autorisations.'),'error');
+        showToast("❌ Envoi Google Sheets impossible : "+(e.message||"vérifiez l'URL, le déploiement et les autorisations."),'error');
     }
 }
 
