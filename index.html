@@ -2121,6 +2121,7 @@
                                 <th>Telephone</th>
                                 <th>Type de contrat</th>
                                 <th>Statut</th>
+                                <th>Badge</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -2192,7 +2193,7 @@
                                 <th>Duree</th>
                                 <th>Heures sup. totales</th>
                                 <th>Statut</th>
-                                <th>Code-barres</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody id="histTableBody">
@@ -3637,6 +3638,17 @@ function deleteEmployee(id) {
     openModal('confirmModal');
 }
 
+function openEmployeeBadgeById(empId) {
+    const emp = employees.find(e => e.id === empId);
+    if (!emp) {
+        showToast('Employe introuvable', 'error');
+        return;
+    }
+    showEmployeeBadge(emp).catch(() => {
+        showToast("Impossible d’afficher le badge de l'employe", 'error');
+    });
+}
+
 function renderEmployees() {
     const search = (document.getElementById('empSearch').value || '').toLowerCase();
     const tbody = document.getElementById('empTableBody');
@@ -3673,6 +3685,7 @@ function renderEmployees() {
             '<td>' + emp.tel + '</td>' +
             '<td><span class="badge" style="background:var(--bg);color:var(--fg-muted);">' + emp.contrat + '</span></td>' +
             '<td>' + statusBadge + '</td>' +
+            '<td><button class="btn-icon" title="Afficher le badge" onclick="openEmployeeBadgeById(\'' + emp.id + '\')"><i class="fas fa-id-badge"></i></button></td>' +
             '<td><div class="actions-cell">' +
                 '<button class="btn-icon edit" title="Modifier" onclick="openEditEmployeeModal(\'' + emp.id + '\')"><i class="fas fa-pen"></i></button>' +
                 '<button class="btn-icon delete" title="Supprimer" onclick="deleteEmployee(\'' + emp.id + '\')"><i class="fas fa-trash"></i></button>' +
@@ -4650,7 +4663,7 @@ function renderHistory() {
 
     const tbody = document.getElementById('histTableBody');
     if (pageRecords.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="9"><div class="empty-state"><i class="fas fa-history"></i><p>Aucun historique trouve</p></div></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="10"><div class="empty-state"><i class="fas fa-history"></i><p>Aucun historique trouve</p></div></td></tr>';
     } else {
         tbody.innerHTML = pageRecords.map(r => {
             const color = getAvatarColor(r.emp.id);
@@ -4670,7 +4683,10 @@ function renderHistory() {
                 '<td style="font-family:Space Grotesk,monospace;font-size:13px;">' + calcDuration(r.entree, r.sortie) + '</td>' +
                 '<td style="font-family:Space Grotesk,monospace;font-size:13px;font-weight:600;color:' + (overtime > 0 ? 'var(--warning)' : 'var(--fg-muted)') + ';">' + formatMinutes(overtime) + '</td>' +
                 '<td>' + statusBadge + '</td>' +
-                '<td style="font-family:Space Grotesk,monospace;font-weight:600;font-size:12px;">' + (r.codeBarres || r.emp.matricule || '') + '</td>' +
+                '<td><div class="actions-cell">' +
+                    '<button class="btn-icon edit" title="Modifier le pointage" onclick="openHistoryTimeModal(\'' + r.date + '\',\'' + r.emp.id + '\')"><i class="fas fa-pen"></i></button>' +
+                    '<button class="btn-icon delete" title="Supprimer le pointage" onclick="askHistoryDelete(\'' + r.date + '\',\'' + r.emp.id + '\')"><i class="fas fa-trash"></i></button>' +
+                '</div></td>' +
             '</tr>';
         }).join('');
     }
@@ -4689,6 +4705,42 @@ function renderHistory() {
     }
     pagHtml += '<button class="page-btn" onclick="goHistPage(' + (currentHistPage + 1) + ')" ' + (currentHistPage === totalPages ? 'disabled style="opacity:0.3;pointer-events:none;"' : '') + '><i class="fas fa-chevron-right"></i></button>';
     pagEl.innerHTML = pagHtml;
+}
+
+function askHistoryDelete(date, empId) {
+    const dayP = pointages[date];
+    const p = dayP && dayP[empId];
+    const emp = employees.find(e => e.id === empId);
+    if (!p || !emp) {
+        showToast('Pointage introuvable', 'error');
+        return;
+    }
+
+    document.getElementById('confirmMessage').textContent =
+        'Confirmer la suppression du pointage de ' + emp.nom + ' du ' + date + ' ?';
+
+    document.getElementById('confirmAction').onclick = function() {
+        if (pointages[date] && pointages[date][empId]) {
+            delete pointages[date][empId];
+
+            if (Object.keys(pointages[date]).length === 0) {
+                delete pointages[date];
+            }
+
+            saveData();
+            closeModal('confirmModal');
+            renderHistory();
+            renderDashboard();
+            renderPointageCards();
+            updateActiveCount();
+            showToast('Pointage supprimé.', 'warning');
+        } else {
+            closeModal('confirmModal');
+            showToast('Pointage introuvable', 'error');
+        }
+    };
+
+    openModal('confirmModal');
 }
 
 function openHistoryTimeModal(date, empId) {
