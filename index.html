@@ -2006,13 +2006,7 @@
                     <button class="btn btn-danger" onclick="clearTodayBarcodeAttendance()"><i class="fas fa-trash-alt"></i> 🗑 Effacer les pointages</button>
                 </div>
 
-                <div class="scanner-config">
-                    <div style="display:flex;gap:10px;flex-wrap:wrap;">
-                        <button class="btn btn-primary" onclick="sendBarcodeAttendanceToGoogleSheets()"><i class="fas fa-table"></i> Envoyer à Google Sheets</button>
-                        <button class="btn btn-secondary" onclick="openGooglePointageSheet()"><i class="fas fa-table"></i> Ouvrir la feuille Pointage</button>
-                    </div>
-                    <div class="scanner-help">L'envoi Google Sheets nécessite une connexion Internet. Le pointage local reste disponible hors ligne. La configuration se fait dans Paramètres.</div>
-                </div>
+
 
                 <div class="panel" style="margin:0 20px 20px;">
                     <div class="panel-header">
@@ -2177,9 +2171,6 @@
                 <i class="fas fa-upload"></i> Importer Excel
             </button>
             <input type="file" id="historyExcelImport" accept=".xlsx,.xls,.csv" style="display:none" onchange="importHistoryExcel(event)">
-            <button class="btn btn-secondary" onclick="exportHistoryGoogleSheets()">
-                <i class="fas fa-table"></i> Google Sheets
-            </button>
         </div>
         <div class="panel">
             <div class="panel-body" style="padding: 0;">
@@ -2303,47 +2294,6 @@
                 <p style="font-size:11px;color:var(--fg-muted);margin-top:10px;line-height:1.5;">
                     Les identifiants sont enregistrés localement dans le navigateur, comme les autres paramètres de cette application.
                 </p>
-            </div>
-
-            <div class="report-card">
-                <h4><i class="fas fa-table"></i> Google Sheets</h4>
-                <div class="scanner-config-grid" style="margin-top:10px;">
-                    <div class="form-group">
-                        <label class="form-label">URL Web App Google Apps Script</label>
-                        <input class="form-input" id="scannerGoogleWebAppUrl" type="url" placeholder="https://script.google.com/macros/s/.../exec">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Identifiant Google Sheets</label>
-                        <input class="form-input" id="scannerGoogleSheetId" type="text" placeholder="ID du fichier Google Sheets">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Nom de la feuille</label>
-                        <input class="form-input" id="scannerGoogleSheetName" type="text" placeholder="Feuille1">
-                    </div>
-                </div>
-                <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;">
-                    <button class="btn btn-secondary" onclick="saveBarcodeGoogleConfig()"><i class="fas fa-save"></i> Enregistrer la configuration</button>
-                    <button class="btn btn-secondary" onclick="openGooglePointageSheet()"><i class="fas fa-table"></i> Ouvrir la feuille Pointage</button>
-                </div>
-                <p style="font-size:11px;color:var(--fg-muted);margin-top:10px;line-height:1.5;">
-                    L'envoi des pointages vers Google Sheets se fait depuis l'onglet Scanner par code à barres, dans Pointage.
-                </p>
-            </div>
-
-            <div class="report-card">
-                <h4><i class="fas fa-database"></i> Donnees</h4>
-                <div style="display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap;">
-                    <button class="btn btn-secondary" onclick="exportAllData()">
-                        <i class="fas fa-download"></i> Exporter toutes les donnees
-                    </button>
-                    <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">
-                        <i class="fas fa-upload"></i> Importer des donnees
-                    </button>
-                    <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
-                    <button class="btn btn-danger" onclick="confirmReset()">
-                        <i class="fas fa-trash-alt"></i> Reinitialiser
-                    </button>
-                </div>
             </div>
 
             <div class="report-card">
@@ -2754,12 +2704,6 @@ let currentPointageFilter = 'all';
 let currentHistPage = 1;
 const histPerPage = 15;
 let reportPeriod = 'week';
-const GOOGLE_SHEETS_CONFIG = {
-    WEB_APP_URL: '',
-    SHEET_ID: '18n-tO34vWnZdFt6Msm61FTtbpBMa4M3qUUTVgDfQU00',
-    SHEET_NAME: 'Pointage',
-    SHEET_URL: 'https://docs.google.com/spreadsheets/d/18n-tO34vWnZdFt6Msm61FTtbpBMa4M3qUUTVgDfQU00/edit?usp=drivesdk'
-};
 const BARCODE_STORAGE_KEY = 'pp_scanner_attendance';
 let barcodeScannerStream = null;
 let barcodeScannerActive = false;
@@ -2872,12 +2816,11 @@ function navigate(page) {
     document.getElementById('pageTitle').textContent = titles[page] || page;
 
     if (page === 'dashboard') renderDashboard();
-    if (page === 'pointage') { renderPointageCards(); renderBarcodeAttendanceTable(); updateBarcodeScannerDate(); loadBarcodeGoogleConfig(); }
+    if (page === 'pointage') { renderPointageCards(); renderBarcodeAttendanceTable(); updateBarcodeScannerDate(); }
     if (page === 'employes') renderEmployees();
     if (page === 'historique') { currentHistPage = 1; renderHistory(); }
     if (page === 'rapports') renderReports();
-    if (page === 'parametres') loadBarcodeGoogleConfig();
-
+   
     // Fermer sidebar mobile
     document.getElementById('sidebar').classList.remove('open');
     document.getElementById('sidebarOverlay').classList.remove('show');
@@ -3761,7 +3704,7 @@ function switchPointageMode(mode, btn) {
     btn.classList.add('active');
     document.querySelectorAll('.pointage-mode-content').forEach(c => c.classList.remove('active'));
     document.getElementById('pointageMode-' + mode).classList.add('active');
-    if (mode === 'scanner') { updateBarcodeScannerDate(); renderBarcodeAttendanceTable(); loadBarcodeGoogleConfig(); } else { stopBarcodeScanner(); }
+    if (mode === 'scanner') { updateBarcodeScannerDate(); renderBarcodeAttendanceTable(); } else { stopBarcodeScanner(); }
 
 }
 
@@ -4472,55 +4415,6 @@ function createSimpleXlsx(rows, filename) {
     const blob=new Blob([join([ld,cd,end])],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 
-function saveBarcodeGoogleConfig() {
-    const cfg={
-        WEB_APP_URL: document.getElementById('scannerGoogleWebAppUrl').value.trim(),
-        SHEET_ID: document.getElementById('scannerGoogleSheetId').value.trim() || GOOGLE_SHEETS_CONFIG.SHEET_ID,
-        SHEET_NAME: document.getElementById('scannerGoogleSheetName').value.trim() || 'Pointage'
-    };
-    localStorage.setItem('pp_scanner_google_config', JSON.stringify(cfg));
-    GOOGLE_SHEETS_CONFIG.WEB_APP_URL=cfg.WEB_APP_URL;
-    GOOGLE_SHEETS_CONFIG.SHEET_ID=cfg.SHEET_ID;
-    GOOGLE_SHEETS_CONFIG.SHEET_NAME=cfg.SHEET_NAME;
-    showToast('Configuration Google Sheets enregistrée.');
-}
-
-function loadBarcodeGoogleConfig() {
-    try {
-        const cfg=JSON.parse(localStorage.getItem('pp_scanner_google_config'))||{};
-        GOOGLE_SHEETS_CONFIG.WEB_APP_URL=cfg.WEB_APP_URL||'';
-        GOOGLE_SHEETS_CONFIG.SHEET_ID=cfg.SHEET_ID||'18n-tO34vWnZdFt6Msm61FTtbpBMa4M3qUUTVgDfQU00';
-        GOOGLE_SHEETS_CONFIG.SHEET_NAME=cfg.SHEET_NAME||'Pointage';
-        const a=document.getElementById('scannerGoogleWebAppUrl'),b=document.getElementById('scannerGoogleSheetId'),c=document.getElementById('scannerGoogleSheetName');
-        if(a)a.value=cfg.WEB_APP_URL||''; if(b)b.value=GOOGLE_SHEETS_CONFIG.SHEET_ID; if(c)c.value=GOOGLE_SHEETS_CONFIG.SHEET_NAME;
-    } catch(e) {}
-}
-
-function openGooglePointageSheet() { window.open(GOOGLE_SHEETS_CONFIG.SHEET_URL, '_blank'); }
-
-async function sendBarcodeAttendanceToGoogleSheets() {
-    let cfg={}; try { cfg=JSON.parse(localStorage.getItem('pp_scanner_google_config'))||{}; } catch(e) {}
-    const url=(document.getElementById('scannerGoogleWebAppUrl').value.trim() || cfg.WEB_APP_URL || '').trim();
-    const sheetId=(document.getElementById('scannerGoogleSheetId').value.trim() || cfg.SHEET_ID || GOOGLE_SHEETS_CONFIG.SHEET_ID).trim();
-    const sheetName=(document.getElementById('scannerGoogleSheetName').value.trim() || cfg.SHEET_NAME || 'Pointage').trim();
-    const rawRecords=getScannerTodayRecords();
-    if(!rawRecords.length){showToast("Aucun pointage à envoyer pour aujourd'hui.",'warning');return;}
-    const records=rawRecords.map(r=>{const emp=employees.find(e=>String(e.matricule||'').trim()===String(r.matricule||'').trim())||{};return {id:r.id||'',date:r.date||todayStr(),matricule:r.matricule||'',employe:emp.nom||'',departement:emp.dept||'',poste:emp.poste||'',entree:r.entree||'',sortie:r.sortie||'',dureeTravaillee:r.sortie?formatWorkedBarcode(calcWorkedMinutesBarcode(r.entree,r.sortie)):'--',heuresSupplementaires:formatWorkedBarcode(calcBarcodeOvertimeMinutes(r.sortie)),statut:barcodeStatus(r),codeBarres:r.matricule||''};});
-    await sendRecordsToGoogleSheets(records,url,sheetId,sheetName);
-}
-
-async function sendRecordsToGoogleSheets(records,url,sheetId,sheetName){
-    if(!url){showToast('URL Web App Google Apps Script non configurée. La feuille Pointage va être ouverte.','warning');openGooglePointageSheet();return false;}
-    if(!/^https:\/\/script\.google\.com\/macros\/s\/[^\s]+\/exec(?:\?.*)?$/i.test(url)){showToast("URL invalide : utilisez l'URL Web App Google Apps Script qui se termine par /exec.",'warning');return false;}
-    try{
-        showToast('Envoi vers la feuille Pointage en cours...','warning');
-        const response=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'appendAttendance',spreadsheetId:sheetId,sheetName:sheetName||'Pointage',records})});
-        const text=await response.text(); let result={}; try{result=JSON.parse(text);}catch(e){}
-        if(!response.ok||result.success===false)throw new Error(result.message||('HTTP '+response.status));
-        showToast('✅ '+(result.message||'Pointages envoyés vers la feuille Pointage.')); openGooglePointageSheet(); return true;
-    }catch(e){console.error('Google Sheets:',e);showToast("❌ Envoi Google Sheets impossible : "+(e.message||"vérifiez l'URL, le déploiement et les autorisations."),'error');return false;}
-}
-
 // ============================================================
 // DASHBOARD
 // ============================================================
@@ -5107,17 +5001,6 @@ function exportHistory() {
     showToast('Historique exporte en Excel');
 }
 
-async function exportHistoryGoogleSheets(){
-    const headers=['Matricule','Employe','Departement','Date','Entree','Sortie','Duree','Heures supplementaires','Statut']; const rows=[headers]; const search=(document.getElementById('histSearch').value||'').toLowerCase(); const dateFilter=document.getElementById('histDateFilter').value; const deptFilter=document.getElementById('histDeptFilter').value; const records=[];
-    Object.keys(pointages).forEach(date=>Object.keys(pointages[date]||{}).forEach(empId=>{const emp=employees.find(e=>e.id===empId),p=pointages[date][empId];if(!emp||!p||!p.entree)return;if(search&&!(emp.nom||'').toLowerCase().includes(search)&&!(emp.matricule||'').toLowerCase().includes(search))return;if(dateFilter&&date!==dateFilter)return;if(deptFilter!=='all'&&emp.dept!==deptFilter)return;const status=p.sortie?'Parti':(p.status==='retard'?'Retard':'Present');rows.push([emp.matricule,emp.nom,emp.dept,date,p.entree,p.sortie||'',calcDuration(p.entree,p.sortie),formatMinutes(calcOvertimeMinutes(p.entree,p.sortie)),status]);records.push({id:p.id||generateId(),date,matricule:emp.matricule||'',employe:emp.nom||'',departement:emp.dept||'',poste:emp.poste||'',entree:p.entree||'',sortie:p.sortie||'',dureeTravaillee:calcDuration(p.entree,p.sortie),heuresSupplementaires:formatMinutes(calcOvertimeMinutes(p.entree,p.sortie)),statut:status,codeBarres:emp.matricule||''});}));
-    if(!records.length){showToast('Aucun pointage dans la sélection.','warning');return;}
-    let cfg={};try{cfg=JSON.parse(localStorage.getItem('pp_scanner_google_config'))||{};}catch(e){}
-    const url=(document.getElementById('scannerGoogleWebAppUrl').value.trim()||cfg.WEB_APP_URL||'').trim(); const sheetId=(document.getElementById('scannerGoogleSheetId').value.trim()||cfg.SHEET_ID||GOOGLE_SHEETS_CONFIG.SHEET_ID).trim(); const sheetName=(document.getElementById('scannerGoogleSheetName').value.trim()||cfg.SHEET_NAME||'Pointage').trim();
-    if(url){const sent=await sendRecordsToGoogleSheets(records,url,sheetId,sheetName);if(sent)return;}
-    const esc=v=>{const x=String(v??'');return /[",\n\r]/.test(x)?'"'+x.replace(/"/g,'""')+'"':x;}; const csv='\uFEFF'+rows.map(r=>r.map(esc).join(',')).join('\r\n'); const blob=new Blob([csv],{type:'text/csv;charset=utf-8'}); const u=URL.createObjectURL(blob); const a=document.createElement('a');a.href=u;a.download='pointage_google_sheets.csv';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1500);openGooglePointageSheet();showToast('CSV du tableau préparé. Importez-le dans la feuille Pointage.','warning');
-}
-
-
 // Importer un pointage Excel local dans l'historique
 async function importHistoryExcel(event){
     const file=event.target.files&&event.target.files[0]; if(!file)return;
@@ -5481,7 +5364,6 @@ initTheme();
 loadData();
 renderDashboard();
 renderBarcodeAttendanceTable();
-loadBarcodeGoogleConfig();
 checkLogin();
 updateClock();
 setInterval(updateClock, 1000);
