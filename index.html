@@ -1488,6 +1488,18 @@
         }
 
         /* === AJOUT : gestion du second utilisateur et des accès === */
+        .firebase-users-list { margin-top: 18px; border-top: 1px solid var(--border); padding-top: 16px; }
+        .firebase-user-row { display:grid; grid-template-columns:1.2fr 1fr auto; gap:10px; align-items:center; padding:10px 0; border-bottom:1px solid rgba(42,53,72,.5); }
+        .firebase-user-meta { min-width:0; }
+        .firebase-user-name { font-weight:600; font-size:13px; }
+        .firebase-user-email { font-size:11px; color:var(--fg-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .firebase-user-actions { display:flex; gap:6px; justify-content:flex-end; }
+        .firebase-user-access { font-size:11px; color:var(--fg-muted); line-height:1.5; }
+        .firebase-user-status { font-size:10px; font-weight:700; padding:3px 7px; border-radius:6px; margin-left:6px; }
+        .firebase-user-status.active { color:var(--accent); background:var(--accent-dim); }
+        .firebase-user-status.inactive { color:var(--danger); background:var(--danger-dim); }
+        @media (max-width: 700px) { .firebase-user-row { grid-template-columns:1fr; } .firebase-user-actions { justify-content:flex-start; } }
+
         .access-permissions {
             display:grid;
             grid-template-columns:repeat(2,1fr);
@@ -2349,8 +2361,8 @@
         </div>
 
         <div class="form-group">
-            <label class="form-label">Nom d'utilisateur</label>
-            <input type="text" class="form-input" id="loginUsername" autocomplete="username" placeholder="Nom d'utilisateur">
+            <label class="form-label">Username</label>
+            <input type="text" class="form-input" id="loginUsername" autocomplete="username" placeholder="Ex : user1">
         </div>
 
         <div class="form-group">
@@ -2363,7 +2375,7 @@
         </button>
 
         <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--fg-muted);">
-            Les identifiants et les accès se configurent dans Paramètres.
+            L’administrateur utilise Firebase. Les autres utilisateurs utilisent un username et un mot de passe configurés dans Paramètres.
         </div>
     </div>
 </div>
@@ -2931,6 +2943,70 @@
                 </p>
             </div>
 
+            <div class="report-card" id="appUsersPanel">
+                <h4><i class="fas fa-user"></i> Utilisateurs de l’application</h4>
+                <p style="font-size:11px;color:var(--fg-muted);margin-top:8px;line-height:1.5;">Ces utilisateurs ne sont pas des comptes Firebase. Exemple : <b>Username : user1</b> / <b>Mot de passe : 123456789</b>. Les comptes et leurs droits sont synchronisés en ligne dans Firebase.</p>
+                <input type="hidden" id="editAppUserUsername" value="">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:14px;">
+                    <div class="form-group" style="margin-bottom:0;"><label class="form-label">Nom affiché</label><input type="text" class="form-input" id="newAppUserName" placeholder="Ex : Responsable RH"></div>
+                    <div class="form-group" style="margin-bottom:0;"><label class="form-label">Username</label><input type="text" class="form-input" id="newAppUserUsername" placeholder="Ex : user1"></div>
+                    <div class="form-group" style="margin-bottom:0;"><label class="form-label">Mot de passe</label><input type="password" class="form-input" id="newAppUserPassword" placeholder="Minimum 6 caractères"></div>
+                    <div class="form-group" style="margin-bottom:0;"><label class="form-label">Statut</label><label class="access-permission" style="margin-top:8px;"><input type="checkbox" id="newAppUserActive" checked> Utilisateur actif</label></div>
+                </div>
+                <div class="form-label" style="margin-top:16px;">Accès autorisés</div>
+                <div class="access-permissions">
+                    <label class="access-permission"><input type="checkbox" id="newAppUserAccessDashboard"> Tableau de bord</label>
+                    <label class="access-permission"><input type="checkbox" id="newAppUserAccessPointage" checked disabled> Pointage</label>
+                    <label class="access-permission"><input type="checkbox" id="newAppUserAccessEmployes"> Employes</label>
+                    <label class="access-permission"><input type="checkbox" id="newAppUserAccessHistorique"> Historique</label>
+                    <label class="access-permission"><input type="checkbox" id="newAppUserAccessRapports"> Rapports</label>
+                    <label class="access-permission"><input type="checkbox" id="newAppUserAccessParametres"> Parametres</label>
+                </div>
+                <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;">
+                    <button class="btn btn-primary" id="appUserSaveBtn" type="button" onclick="saveAppUser()"><i class="fas fa-plus"></i> Ajouter l'utilisateur</button>
+                    <button class="btn btn-secondary" type="button" onclick="resetAppUserForm()">Annuler</button>
+                </div>
+                <div id="appUsersList" style="margin-top:18px;display:grid;gap:8px;"></div>
+            </div>
+
+            <div class="report-card" id="firebaseUsersPanel">
+                <h4><i class="fas fa-user-shield"></i> Gestion des utilisateurs Firebase</h4>
+                <p style="font-size:11px;color:var(--fg-muted);margin-top:8px;line-height:1.5;">Ajoutez plusieurs utilisateurs avec leur email Firebase, mot de passe et droits d'accès. Les changements de droits sont enregistrés en ligne dans Firebase.</p>
+                <input type="hidden" id="editFirebaseUserUid" value="">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:14px;">
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label">Nom affiché</label>
+                        <input type="text" class="form-input" id="newFirebaseUserName" placeholder="Ex : Responsable RH">
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label">Email Firebase</label>
+                        <input type="email" class="form-input" id="newFirebaseUserEmail" placeholder="utilisateur@entreprise.com">
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label">Mot de passe</label>
+                        <input type="password" class="form-input" id="newFirebaseUserPassword" placeholder="Minimum 6 caractères">
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label">Statut</label>
+                        <label class="access-permission" style="margin-top:8px;"><input type="checkbox" id="newFirebaseUserActive" checked> Utilisateur actif</label>
+                    </div>
+                </div>
+                <div class="form-label" style="margin-top:16px;">Accès autorisés</div>
+                <div class="access-permissions">
+                    <label class="access-permission"><input type="checkbox" id="newUserAccessDashboard"> Tableau de bord</label>
+                    <label class="access-permission"><input type="checkbox" id="newUserAccessPointage" checked disabled> Pointage</label>
+                    <label class="access-permission"><input type="checkbox" id="newUserAccessEmployes"> Employés</label>
+                    <label class="access-permission"><input type="checkbox" id="newUserAccessHistorique"> Historique</label>
+                    <label class="access-permission"><input type="checkbox" id="newUserAccessRapports"> Rapports</label>
+                    <label class="access-permission"><input type="checkbox" id="newUserAccessParametres"> Paramètres</label>
+                </div>
+                <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;">
+                    <button class="btn btn-primary" id="firebaseUserSaveBtn" type="button" onclick="createFirebaseUser()"><i class="fas fa-plus"></i> Ajouter l'utilisateur</button>
+                    <button class="btn btn-secondary" type="button" onclick="resetFirebaseUserForm()">Réinitialiser</button>
+                </div>
+                <div class="firebase-users-list" id="firebaseUsersList"></div>
+            </div>
+
             <div class="report-card">
                 <h4><i class="fas fa-info-circle"></i> A propos</h4>
                 <p style="font-size: 13px; color: var(--fg-muted); margin-top: 8px; line-height: 1.7;">
@@ -3396,6 +3472,10 @@ let firebaseDb = null;
 let firebaseAuth = null;
 let firebaseListenersAttached = false;
 let firebaseCloudWriting = false;
+let firebaseUsers = {};
+let appUsers = {};
+let firebaseUsersListenerAttached = false;
+let appUsersListenerAttached = false;
 
 function initFirebase() {
     try {
@@ -3440,6 +3520,8 @@ function cloudData() {
         pointages: pointages || {},
         activities: activities || [],
         settings: getSettingsSafeForCloud(),
+        users: firebaseUsers || {},
+        appUsers: appUsers || {},
         updatedAt: Date.now()
     };
 }
@@ -3457,6 +3539,14 @@ function applyCloudData(d) {
     if (Array.isArray(d.activities)) activities = d.activities;
     if (d.settings && typeof d.settings === 'object') {
         localStorage.setItem('pp_settings', JSON.stringify(d.settings));
+    }
+    if (d.users && typeof d.users === 'object') {
+        firebaseUsers = d.users;
+        try { renderFirebaseUsers(); } catch(e) {}
+    }
+    if (d.appUsers && typeof d.appUsers === 'object') {
+        appUsers = d.appUsers;
+        try { renderAppUsers(); } catch(e) {}
     }
     try { syncBarcodeStorage(); } catch(e) {}
     try { loadSettings(); } catch(e) {}
@@ -3487,6 +3577,8 @@ async function saveCloudData() {
                 pointages: pointages || {},
                 activities: activities || [],
                 settings: getSettingsSafeForCloud(),
+                users: firebaseUsers || {},
+                appUsers: appUsers || {},
                 updatedAt: Date.now()
             };
         } else {
@@ -3529,23 +3621,294 @@ function attachFirebaseListeners() {
     });
 }
 
+async function loadFirebaseUserProfile(uid) {
+    if (!firebaseReady || !firebaseDb || !uid) return null;
+    try {
+        const snap = await firebaseDb.ref(CLOUD_ROOT + '/users/' + uid).once('value');
+        return snap.exists() ? snap.val() : null;
+    } catch(e) {
+        console.warn('Profil utilisateur Firebase impossible :', e);
+        return null;
+    }
+}
+
+function applyFirebaseUserProfile(profile) {
+    if (!profile) return false;
+    if (profile.active === false) return false;
+    currentUserRole = 'user';
+    window.currentFirebaseUserProfile = profile;
+    localStorage.setItem('pp_current_user_access', JSON.stringify(profile.access || {}));
+    return true;
+}
+
+function attachCurrentFirebaseUserListener() {
+    if (!firebaseReady || !firebaseDb || !firebaseAuth || !firebaseAuth.currentUser || firebaseUsersListenerAttached) return;
+    if (isFirebaseAdmin()) return;
+    firebaseUsersListenerAttached = true;
+    const uid = firebaseAuth.currentUser.uid;
+    firebaseDb.ref(CLOUD_ROOT + '/users/' + uid).on('value', function(snapshot) {
+        const profile = snapshot.val();
+        if (!profile || profile.active === false) {
+            showToast('Votre compte a été désactivé par l’administrateur.', 'error');
+            logout();
+            return;
+        }
+        applyFirebaseUserProfile(profile);
+        applyUserAccess();
+        const activePage = document.querySelector('.page.active');
+        const pageName = activePage ? activePage.id.replace('page-', '') : '';
+        if (pageName && !getCurrentUserAccess()[pageName]) navigate('pointage');
+    });
+}
+
+function getFirebaseUserAccessFromForm() {
+    return {
+        dashboard: !!document.getElementById('newUserAccessDashboard').checked,
+        pointage: true,
+        employes: !!document.getElementById('newUserAccessEmployes').checked,
+        historique: !!document.getElementById('newUserAccessHistorique').checked,
+        rapports: !!document.getElementById('newUserAccessRapports').checked,
+        parametres: !!document.getElementById('newUserAccessParametres').checked
+    };
+}
+
+function resetFirebaseUserForm() {
+    const editUid = document.getElementById('editFirebaseUserUid');
+    if (editUid) editUid.value = '';
+    const saveBtn = document.getElementById('firebaseUserSaveBtn');
+    if (saveBtn) saveBtn.innerHTML = "<i class='fas fa-plus'></i> Ajouter l'utilisateur";
+    const pwd = document.getElementById('newFirebaseUserPassword');
+    if (pwd) pwd.placeholder = 'Minimum 6 caractères';
+    ['newFirebaseUserName','newFirebaseUserEmail','newFirebaseUserPassword'].forEach(function(id){
+        const el=document.getElementById(id); if(el) el.value='';
+    });
+    document.getElementById('newFirebaseUserActive').checked = true;
+    ['newUserAccessDashboard','newUserAccessEmployes','newUserAccessHistorique','newUserAccessRapports','newUserAccessParametres'].forEach(function(id){
+        const el=document.getElementById(id); if(el) el.checked=false;
+    });
+}
+
+function renderFirebaseUsers() {
+    const box = document.getElementById('firebaseUsersList');
+    if (!box) return;
+    if (currentUserRole !== 'admin') { box.innerHTML = ''; return; }
+    const entries = Object.keys(firebaseUsers || {}).map(function(uid){ return Object.assign({uid:uid}, firebaseUsers[uid]); });
+    if (!entries.length) {
+        box.innerHTML = '<div style="font-size:12px;color:var(--fg-muted);">Aucun utilisateur supplémentaire enregistré.</div>';
+        return;
+    }
+    box.innerHTML = entries.map(function(u) {
+        const a = u.access || {};
+        const access = ['pointage','dashboard','employes','historique','rapports','parametres'].filter(function(k){return a[k];}).map(function(k){
+            return ({pointage:'Pointage',dashboard:'Accueil',employes:'Employés',historique:'Historique',rapports:'Rapports',parametres:'Paramètres'})[k];
+        }).join(' · ');
+        return '<div class="firebase-user-row">' +
+            '<div class="firebase-user-meta"><div class="firebase-user-name">' + escapeHtml(u.name || 'Utilisateur') + '<span class="firebase-user-status ' + (u.active === false ? 'inactive' : 'active') + '">' + (u.active === false ? 'Désactivé' : 'Actif') + '</span></div><div class="firebase-user-email">' + escapeHtml(u.email || '') + '</div><div class="firebase-user-access">' + escapeHtml(access || 'Pointage') + '</div></div>' +
+            '<div class="firebase-user-access">Créé le ' + (u.createdAt ? new Date(u.createdAt).toLocaleDateString('fr-FR') : '—') + '</div>' +
+            '<div class="firebase-user-actions"><button class="btn btn-secondary btn-sm" type="button" onclick="editFirebaseUser(\'' + u.uid + '\')">Modifier</button><button class="btn btn-secondary btn-sm" type="button" onclick="toggleFirebaseUser(\'' + u.uid + '\')">' + (u.active === false ? 'Activer' : 'Désactiver') + '</button></div>' +
+            '</div>';
+    }).join('');
+}
+
+async function createFirebaseUser() {
+    const editUid = document.getElementById('editFirebaseUserUid').value.trim();
+    if (editUid) { await saveFirebaseUserChanges(editUid); return; }
+    if (!isFirebaseAdmin()) { showToast('Seul l’administrateur Firebase peut ajouter des utilisateurs.', 'error'); return; }
+    const name = document.getElementById('newFirebaseUserName').value.trim();
+    const email = document.getElementById('newFirebaseUserEmail').value.trim().toLowerCase();
+    const password = document.getElementById('newFirebaseUserPassword').value;
+    if (!email || !password) { showToast('Email et mot de passe obligatoires.', 'error'); return; }
+    if (password.length < 6) { showToast('Le mot de passe doit contenir au moins 6 caractères.', 'error'); return; }
+    if (!firebaseReady && !initFirebase()) { showToast('Firebase indisponible.', 'error'); return; }
+    const appName = 'pointagepro_user_creator_' + Date.now();
+    let secondaryApp = null;
+    try {
+        secondaryApp = firebase.initializeApp(FIREBASE_CONFIG, appName);
+        const secondaryAuth = secondaryApp.auth();
+        const cred = await secondaryAuth.createUserWithEmailAndPassword(email, password);
+        const profile = {
+            uid: cred.user.uid, email: email, name: name || email.split('@')[0],
+            active: document.getElementById('newFirebaseUserActive').checked,
+            access: getFirebaseUserAccessFromForm(),
+            createdAt: Date.now(), updatedAt: Date.now()
+        };
+        await firebaseDb.ref(CLOUD_ROOT + '/users/' + cred.user.uid).set(profile);
+        firebaseUsers[cred.user.uid] = profile;
+        renderFirebaseUsers();
+        resetFirebaseUserForm();
+        showToast('Utilisateur Firebase ajouté et enregistré en ligne.', 'success');
+    } catch(e) {
+        console.warn('Création utilisateur Firebase impossible :', e);
+        const msg = e && e.code === 'auth/email-already-in-use' ? 'Cet email Firebase existe déjà.' : (e.message || 'Création impossible.');
+        showToast(msg, 'error');
+    } finally {
+        try { if (secondaryApp) await secondaryApp.delete(); } catch(e) {}
+    }
+}
+
+function editFirebaseUser(uid) {
+    if (!isFirebaseAdmin()) { showToast('Accès administrateur requis.', 'error'); return; }
+    const u = firebaseUsers && firebaseUsers[uid];
+    if (!u) return;
+    document.getElementById('editFirebaseUserUid').value = uid;
+    document.getElementById('newFirebaseUserName').value = u.name || '';
+    document.getElementById('newFirebaseUserEmail').value = u.email || '';
+    document.getElementById('newFirebaseUserPassword').value = '';
+    document.getElementById('newFirebaseUserActive').checked = u.active !== false;
+    const a = u.access || {};
+    document.getElementById('newUserAccessDashboard').checked = !!a.dashboard;
+    document.getElementById('newUserAccessEmployes').checked = !!a.employes;
+    document.getElementById('newUserAccessHistorique').checked = !!a.historique;
+    document.getElementById('newUserAccessRapports').checked = !!a.rapports;
+    document.getElementById('newUserAccessParametres').checked = !!a.parametres;
+    const btn = document.getElementById('firebaseUserSaveBtn');
+    if (btn) btn.innerHTML = '<i class="fas fa-save"></i> Enregistrer les modifications';
+    document.getElementById('newFirebaseUserPassword').placeholder = 'Laisser vide pour conserver le mot de passe';
+    document.getElementById('newFirebaseUserName').focus();
+}
+
+async function saveFirebaseUserChanges(uid) {
+    if (!isFirebaseAdmin()) { showToast('Accès administrateur requis.', 'error'); return; }
+    const u = firebaseUsers && firebaseUsers[uid];
+    if (!u) return;
+    const name = document.getElementById('newFirebaseUserName').value.trim();
+    const access = getFirebaseUserAccessFromForm();
+    const active = document.getElementById('newFirebaseUserActive').checked;
+    try {
+        const updates = { name: name || u.name || u.email, active: active, access: access, updatedAt: Date.now() };
+        await firebaseDb.ref(CLOUD_ROOT + '/users/' + uid).update(updates);
+        firebaseUsers[uid] = Object.assign({}, u, updates);
+        renderFirebaseUsers();
+        resetFirebaseUserForm();
+        showToast('Droits utilisateur mis à jour en ligne.', 'success');
+    } catch(e) {
+        showToast('Modification Firebase impossible.', 'error');
+    }
+}
+
+async function toggleFirebaseUser(uid) {
+    if (!isFirebaseAdmin()) { showToast('Accès administrateur requis.', 'error'); return; }
+    const u = firebaseUsers && firebaseUsers[uid];
+    if (!u) return;
+    try {
+        u.active = u.active === false;
+        u.updatedAt = Date.now();
+        await firebaseDb.ref(CLOUD_ROOT + '/users/' + uid).update({active:u.active, updatedAt:u.updatedAt});
+        firebaseUsers[uid] = u;
+        renderFirebaseUsers();
+        showToast(u.active ? 'Utilisateur activé en ligne.' : 'Utilisateur désactivé en ligne.', 'success');
+    } catch(e) {
+        showToast('Modification Firebase impossible.', 'error');
+    }
+}
+
+async function hashAppUserPassword(password) {
+    const data = new TextEncoder().encode(password);
+    const hash = await crypto.subtle.digest('SHA-256', data);
+    return Array.from(new Uint8Array(hash)).map(function(b){ return b.toString(16).padStart(2,'0'); }).join('');
+}
+
+function getAppUserAccessFromForm() {
+    return {
+        dashboard: !!document.getElementById('newAppUserAccessDashboard').checked,
+        pointage: true,
+        employes: !!document.getElementById('newAppUserAccessEmployes').checked,
+        historique: !!document.getElementById('newAppUserAccessHistorique').checked,
+        rapports: !!document.getElementById('newAppUserAccessRapports').checked,
+        parametres: !!document.getElementById('newAppUserAccessParametres').checked
+    };
+}
+
+function resetAppUserForm() {
+    ['editAppUserUsername','newAppUserName','newAppUserUsername','newAppUserPassword'].forEach(function(id){ const el=document.getElementById(id); if(el) el.value=''; });
+    document.getElementById('newAppUserActive').checked = true;
+    ['newAppUserAccessDashboard','newAppUserAccessEmployes','newAppUserAccessHistorique','newAppUserAccessRapports','newAppUserAccessParametres'].forEach(function(id){ const el=document.getElementById(id); if(el) el.checked=false; });
+    const b=document.getElementById('appUserSaveBtn'); if(b) b.innerHTML="<i class='fas fa-plus'></i> Ajouter l'utilisateur";
+    const p=document.getElementById('newAppUserPassword'); if(p) p.placeholder='Minimum 6 caractères';
+}
+
+function renderAppUsers() {
+    const box=document.getElementById('appUsersList');
+    if(!box || currentUserRole!=='admin') return;
+    const entries=Object.keys(appUsers||{}).map(function(username){return Object.assign({username:username},appUsers[username]);});
+    if(!entries.length){ box.innerHTML='<div style="font-size:12px;color:var(--fg-muted);">Aucun utilisateur de l’application enregistré.</div>'; return; }
+    box.innerHTML=entries.map(function(u){
+        const a=u.access||{};
+        const access=['pointage','dashboard','employes','historique','rapports','parametres'].filter(function(k){return a[k];}).map(function(k){return ({pointage:'Pointage',dashboard:'Accueil',employes:'Employés',historique:'Historique',rapports:'Rapports',parametres:'Paramètres'})[k];}).join(' · ');
+        return '<div class="firebase-user-row"><div class="firebase-user-meta"><div class="firebase-user-name">'+escapeHtml(u.name||u.username)+'<span class="firebase-user-status '+(u.active===false?'inactive':'active')+'">'+(u.active===false?'Désactivé':'Actif')+'</span></div><div class="firebase-user-email">Username : '+escapeHtml(u.username||'')+'</div><div class="firebase-user-access">'+escapeHtml(access||'Pointage')+'</div></div><div class="firebase-user-actions"><button class="btn btn-secondary btn-sm" type="button" onclick="editAppUser(\''+escapeHtml(u.username||'')+'\')">Modifier</button><button class="btn btn-secondary btn-sm" type="button" onclick="toggleAppUser(\''+escapeHtml(u.username||'')+'\')">'+(u.active===false?'Activer':'Désactiver')+'</button></div></div>';
+    }).join('');
+}
+
+async function saveAppUser() {
+    if(!isFirebaseAdmin()){ showToast('Accès administrateur requis.','error'); return; }
+    const oldUsername=(document.getElementById('editAppUserUsername').value||'').trim().toLowerCase();
+    const username=(document.getElementById('newAppUserUsername').value||'').trim();
+    const name=(document.getElementById('newAppUserName').value||'').trim();
+    const password=document.getElementById('newAppUserPassword').value;
+    const active=document.getElementById('newAppUserActive').checked;
+    const access=getAppUserAccessFromForm();
+    if(!username){showToast('Le username est obligatoire.','error');return;}
+    if(/\s/.test(username)){showToast('Le username ne doit pas contenir d’espace.','error');return;}
+    if(username.toLowerCase()===FIREBASE_ADMIN_EMAIL.toLowerCase()){showToast('Ce username est réservé à l’administrateur Firebase.','error');return;}
+    if(!oldUsername && password.length<6){showToast('Le mot de passe doit contenir au moins 6 caractères.','error');return;}
+    if(!firebaseReady && !initFirebase()){showToast('Firebase indisponible.','error');return;}
+    try{
+        const key=oldUsername || username.toLowerCase();
+        if(!oldUsername && appUsers[key]){showToast('Ce username existe déjà.','error');return;}
+        const existing=appUsers[key]||{};
+        const profile={username:username.toLowerCase(),name:name||username,active:active,access:access,createdAt:existing.createdAt||Date.now(),updatedAt:Date.now()};
+        if(password) profile.passwordHash=await hashAppUserPassword(password); else if(existing.passwordHash) profile.passwordHash=existing.passwordHash;
+        if(oldUsername && key!==username.toLowerCase()){ await firebaseDb.ref(CLOUD_ROOT+'/appUsers/'+key).remove(); }
+        await firebaseDb.ref(CLOUD_ROOT+'/appUsers/'+username.toLowerCase()).set(profile);
+        appUsers[username.toLowerCase()]=profile;
+        if(oldUsername && key!==username.toLowerCase()) delete appUsers[key];
+        renderAppUsers(); resetAppUserForm(); showToast(oldUsername?'Utilisateur modifié en ligne.':'Utilisateur ajouté en ligne.','success');
+    }catch(e){console.warn(e);showToast('Enregistrement de l’utilisateur impossible.','error');}
+}
+
+function editAppUser(username){
+    if(!isFirebaseAdmin())return; const u=appUsers[username]; if(!u)return;
+    document.getElementById('editAppUserUsername').value=username;
+    document.getElementById('newAppUserUsername').value=username;
+    document.getElementById('newAppUserName').value=u.name||'';
+    document.getElementById('newAppUserPassword').value='';
+    document.getElementById('newAppUserActive').checked=u.active!==false;
+    const a=u.access||{};
+    document.getElementById('newAppUserAccessDashboard').checked=!!a.dashboard; document.getElementById('newAppUserAccessEmployes').checked=!!a.employes; document.getElementById('newAppUserAccessHistorique').checked=!!a.historique; document.getElementById('newAppUserAccessRapports').checked=!!a.rapports; document.getElementById('newAppUserAccessParametres').checked=!!a.parametres;
+    document.getElementById('newAppUserPassword').placeholder='Laisser vide pour conserver le mot de passe';
+    const b=document.getElementById('appUserSaveBtn'); if(b)b.innerHTML='<i class="fas fa-save"></i> Enregistrer les modifications';
+}
+
+async function toggleAppUser(username){
+    if(!isFirebaseAdmin())return; const u=appUsers[username]; if(!u)return;
+    try{u.active=u.active===false;u.updatedAt=Date.now();await firebaseDb.ref(CLOUD_ROOT+'/appUsers/'+username).update({active:u.active,updatedAt:u.updatedAt});renderAppUsers();showToast(u.active?'Utilisateur activé en ligne.':'Utilisateur désactivé en ligne.','success');}catch(e){showToast('Modification impossible.','error');}
+}
+
+function attachCurrentAppUserListener(){
+    if(!firebaseReady||!firebaseDb||currentUserRole!=='user'||appUsersListenerAttached||!window.currentAppUserProfile)return;
+    appUsersListenerAttached=true; const username=window.currentAppUserProfile.username;
+    firebaseDb.ref(CLOUD_ROOT+'/appUsers/'+username).on('value',function(snapshot){
+        const profile=snapshot.val();
+        if(!profile||profile.active===false){showToast('Votre compte a été désactivé par l’administrateur.','error');logout();return;}
+        window.currentAppUserProfile=profile; localStorage.setItem('pp_current_user_access',JSON.stringify(profile.access||{})); applyUserAccess();
+        const activePage=document.querySelector('.page.active'); const pageName=activePage?activePage.id.replace('page-',''):''; if(pageName&&!getCurrentUserAccess()[pageName])navigate('pointage');
+    });
+}
+
 async function initializeFirebaseSync() {
     if (!initFirebase()) return;
-    const role = currentUserRole;
-    if (role === 'admin') {
-        // L'administrateur doit être authentifié dans Firebase avant d'écrire.
-        if (!isFirebaseAdmin()) return;
-    } else {
-        await ensureFirebaseSession('user');
-    }
-    const remote = await loadCloudData();
-    if (remote) {
-        applyCloudData(remote);
-        try { localStorage.setItem('pp_data', JSON.stringify({employees, pointages, activities})); } catch(e) {}
-    } else if (isFirebaseAdmin()) {
-        await saveCloudData();
-    }
+    const role=currentUserRole;
+    if(role==='admin') { if(!isFirebaseAdmin()) return; }
+    else if(!firebaseAuth.currentUser) return;
+    const remote=await loadCloudData();
+    if(remote){applyCloudData(remote);try{localStorage.setItem('pp_data',JSON.stringify({employees,pointages,activities}));}catch(e){}}
+    else if(isFirebaseAdmin()) await saveCloudData();
     attachFirebaseListeners();
+    if(role==='user'){
+        if(window.currentAppUserProfile) attachCurrentAppUserListener();
+        else if(!isFirebaseAdmin()) attachCurrentFirebaseUserListener();
+    }
+    try{renderFirebaseUsers();renderAppUsers();}catch(e){}
 }
 
 function loadData() {
@@ -3588,6 +3951,25 @@ function getCurrentUserAccess() {
         return { dashboard:true, pointage:true, employes:true, historique:true, rapports:true, parametres:true };
     }
     try {
+        const appProfile = window.currentAppUserProfile;
+        if (appProfile && appProfile.access) return Object.assign(
+                { dashboard:false, pointage:true, employes:false, historique:false, rapports:false, parametres:false },
+                appProfile.access || {}
+            );
+        const profile = window.currentFirebaseUserProfile;
+        if (profile && profile.access) {
+            return Object.assign(
+                { dashboard:false, pointage:true, employes:false, historique:false, rapports:false, parametres:false },
+                profile.access || {}
+            );
+        }
+        const currentAccess = JSON.parse(localStorage.getItem('pp_current_user_access') || 'null');
+        if (currentAccess) {
+            return Object.assign(
+                { dashboard:false, pointage:true, employes:false, historique:false, rapports:false, parametres:false },
+                currentAccess
+            );
+        }
         const s = JSON.parse(localStorage.getItem('pp_settings')) || {};
         return Object.assign(
             { dashboard:false, pointage:true, employes:false, historique:false, rapports:false, parametres:false },
@@ -3616,14 +3998,14 @@ function applyUserAccess() {
     const footerName = document.querySelector('.sidebar-footer .user-name');
     const footerRole = document.querySelector('.sidebar-footer .user-role');
     const footerAvatar = document.querySelector('.sidebar-footer .user-avatar');
-    if (footerName) footerName.textContent = currentUserRole === 'admin' ? 'Administrateur' : 'Utilisateur Pointage';
+    if (footerName) footerName.textContent = currentUserRole === 'admin' ? 'Administrateur' : ((window.currentAppUserProfile && window.currentAppUserProfile.name) || 'Utilisateur Pointage');
     if (footerRole) footerRole.textContent = currentUserRole === 'admin' ? 'Amine Diab' : 'Accès contrôlé';
     if (footerAvatar) footerAvatar.textContent = currentUserRole === 'admin' ? 'AD' : 'UP';
 
     const mobileName = document.getElementById('mobileWelcomeName');
     const mobileCompany = document.getElementById('mobileWelcomeCompany');
     const mobileBrand = document.getElementById('mobileBrandName');
-    if (mobileName) mobileName.textContent = currentUserRole === 'admin' ? 'Administrateur 👋' : 'Utilisateur Pointage 👋';
+    if (mobileName) mobileName.textContent = currentUserRole === 'admin' ? 'Administrateur 👋' : (((window.currentAppUserProfile && window.currentAppUserProfile.name) || 'Utilisateur Pointage') + ' 👋');
     try {
         const s = JSON.parse(localStorage.getItem('pp_settings')) || {};
         const company = s.entreprise || 'PointagePro';
@@ -6378,77 +6760,30 @@ function updateClock() {
 // ============================================================
 
 async function performLogin() {
-    const usernameEl = document.getElementById('loginUsername');
-    const passwordEl = document.getElementById('loginPassword');
-    const errorEl = document.getElementById('loginError');
-    const username = usernameEl ? usernameEl.value.trim() : '';
-    const password = passwordEl ? passwordEl.value : '';
-    let settings = {};
-    try { settings = JSON.parse(localStorage.getItem('pp_settings')) || {}; } catch(e) { settings = {}; }
-
-    // Valeurs par défaut identiques sur PC et téléphone.
-    // Les identifiants enregistrés dans Paramètres restent prioritaires.
-    if (!settings.loginUsername) settings.loginUsername = 'Amine';
-    if (!settings.loginPassword) settings.loginPassword = 'amine@123';
-    if (!settings.userUsername) settings.userUsername = 'pointage';
-    if (!settings.userPassword) settings.userPassword = '1234';
-
-    // Nouvelle version : migre uniquement les anciens identifiants par défaut admin/1234.
-    // Les identifiants personnalisés existants ne sont pas écrasés.
-    if (settings.loginUsername === 'admin' && settings.loginPassword === '1234') {
-        settings.loginUsername = 'Amine';
-        settings.loginPassword = 'amine@123';
-        try { localStorage.setItem('pp_settings', JSON.stringify(settings)); } catch(e) {}
-    }
-
-    const adminUsername = String(settings.loginUsername || 'Amine').trim();
-    const adminPassword = String(settings.loginPassword || 'amine@123');
-    const userUsername = String(settings.userUsername || 'pointage').trim();
-    const userPassword = String(settings.userPassword || '1234');
-
-    if (username === adminUsername && password === adminPassword) {
-        currentUserRole = 'admin';
-        if (!initFirebase()) {
-            errorEl.textContent = 'Connexion cloud indisponible.';
-            errorEl.classList.add('show');
-            return;
+    const username=document.getElementById('loginUsername').value.trim();
+    const password=document.getElementById('loginPassword').value;
+    const errorEl=document.getElementById('loginError');
+    if(!username||!password){errorEl.textContent='Veuillez saisir votre username et votre mot de passe.';errorEl.classList.add('show');return;}
+    if(!initFirebase()){errorEl.textContent='Connexion en ligne indisponible.';errorEl.classList.add('show');return;}
+    try{
+        if(username.toLowerCase()===FIREBASE_ADMIN_EMAIL.toLowerCase()){
+            await firebaseAuth.signInWithEmailAndPassword(username,password);
+            currentUserRole='admin'; window.currentAppUserProfile=null; window.currentFirebaseUserProfile=null; localStorage.removeItem('pp_current_user_access');
+        }else{
+            if(firebaseAuth.currentUser && isFirebaseAdmin()) await firebaseAuth.signOut();
+            await ensureFirebaseSession('user');
+            const snap=await firebaseDb.ref(CLOUD_ROOT+'/appUsers/'+username.toLowerCase()).once('value');
+            const profile=snap.exists()?snap.val():null;
+            if(!profile||profile.active===false||!profile.passwordHash) throw new Error('Compte application introuvable');
+            const hash=await hashAppUserPassword(password);
+            if(hash!==profile.passwordHash) throw new Error('Mot de passe incorrect');
+            currentUserRole='user'; window.currentAppUserProfile=profile; window.currentFirebaseUserProfile=null;
+            localStorage.setItem('pp_current_user_access',JSON.stringify(profile.access||{}));
         }
-        try {
-            await firebaseAuth.signInWithEmailAndPassword(FIREBASE_ADMIN_EMAIL, password);
-        } catch (e) {
-            // La connexion à l'interface reste possible même si Firebase Auth
-            // n'est pas disponible sur ce navigateur/appareil.
-            // La synchronisation cloud sera tentée ensuite par initializeFirebaseSync().
-        }
-    } else if (username === userUsername && password === userPassword) {
-        currentUserRole = 'user';
-        if (!initFirebase()) {
-            errorEl.textContent = 'Connexion cloud indisponible.';
-            errorEl.classList.add('show');
-            return;
-        }
-        try {
-            if (!firebaseAuth.currentUser) await firebaseAuth.signInAnonymously();
-        } catch (e) {
-            errorEl.textContent = 'Le pointage cloud est indisponible. Activez la connexion anonyme dans Firebase Authentication.';
-            errorEl.classList.add('show');
-            return;
-        }
-    } else {
-        errorEl.textContent = 'Identifiant ou mot de passe incorrect.';
-        errorEl.classList.add('show');
-        document.getElementById('loginPassword').select();
-        return;
-    }
-
-    sessionStorage.setItem('pp_authenticated', '1');
-    sessionStorage.setItem('pp_user_role', currentUserRole);
-    document.getElementById('loginScreen').classList.add('hidden');
-    errorEl.classList.remove('show');
-    document.getElementById('loginPassword').value = '';
-    applyUserAccess();
-    await initializeFirebaseSync();
-    navigate(currentUserRole === 'admin' ? 'dashboard' : 'pointage');
+        sessionStorage.setItem('pp_authenticated','1'); sessionStorage.setItem('pp_user_role',currentUserRole);
+        document.getElementById('loginScreen').classList.add('hidden'); errorEl.classList.remove('show'); document.getElementById('loginPassword').value='';
+        applyUserAccess(); await initializeFirebaseSync(); navigate(currentUserRole==='admin'?'dashboard':'pointage');
+    }catch(e){console.warn('Connexion impossible:',e);errorEl.textContent='Username ou mot de passe incorrect.';errorEl.classList.add('show');document.getElementById('loginPassword').select();}
 }
 
 function logout() {
@@ -6457,6 +6792,11 @@ function logout() {
     sessionStorage.removeItem('pp_authenticated');
     sessionStorage.removeItem('pp_user_role');
     currentUserRole = 'admin';
+    window.currentFirebaseUserProfile = null;
+    window.currentAppUserProfile = null;
+    firebaseUsersListenerAttached = false;
+    appUsersListenerAttached = false;
+    localStorage.removeItem('pp_current_user_access');
     document.getElementById('loginScreen').classList.remove('hidden');
     document.getElementById('loginUsername').value = '';
     document.getElementById('loginPassword').value = '';
@@ -6481,10 +6821,7 @@ function checkLogin() {
 }
 
 document.getElementById('loginPassword').addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') { e.preventDefault(); performLogin(); }
-});
-document.getElementById('loginUsername').addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') { e.preventDefault(); document.getElementById('loginPassword').focus(); }
+    if (e.key === 'Enter') performLogin();
 });
 
 
@@ -6560,6 +6897,8 @@ window.currentAppLogo = '';
 
 initTheme();
 loadData();
+try { loadSettings(); } catch(e) {}
+try { renderFirebaseUsers(); } catch(e) {}
 renderDashboard();
 renderBarcodeAttendanceTable();
 checkLogin();
