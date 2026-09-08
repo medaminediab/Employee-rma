@@ -4940,7 +4940,36 @@ async function saveEmployeeDossierFiles(empId,files){
    try {
      const ref=firebaseStorage.ref().child(path);
      showToast('Téléversement du PDF en cours...');
-     const snap=await ref.put(f,{contentType:'application/pdf'});
+     const uploadTask=ref.put(f,{contentType:'application/pdf'});
+     const snap=await new Promise((resolve,reject)=>{
+       let finished=false;
+       const timeout=setTimeout(()=>{
+         if(finished)return;
+         finished=true;
+         try{uploadTask.cancel();}catch(_){}
+         reject(new Error('Le téléversement Firebase dépasse 60 secondes. Vérifiez la connexion Internet et les règles Firebase Storage.'));
+       },60000);
+       uploadTask.on(firebase.storage.TaskEvent.STATE_CHANGED,
+         function(snapshot){
+           if(snapshot && snapshot.totalBytes){
+             const pct=Math.round((snapshot.bytesTransferred/snapshot.totalBytes)*100);
+             showToast('Téléversement du PDF : '+pct+'%');
+           }
+         },
+         function(error){
+           if(finished)return;
+           finished=true;
+           clearTimeout(timeout);
+           reject(error);
+         },
+         function(){
+           if(finished)return;
+           finished=true;
+           clearTimeout(timeout);
+           resolve(uploadTask.snapshot);
+         }
+       );
+     });
      showToast('PDF envoyé sur Firebase, finalisation...');
      const url=await snap.ref.getDownloadURL();
      showToast('Lien du PDF récupéré, enregistrement...');
