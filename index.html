@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
     <title>PointagePro — Gestion des Pointages</title>
     <style>
         :root {
@@ -23,11 +24,6 @@
             --info: #4ecdc4;
             --info-dim: rgba(78, 205, 196, 0.12);
         }
-
-        /* === MODE HORS CONNEXION : remplacement local des icones Font Awesome === */
-        .fas { font-style: normal; font-family: Arial, Helvetica, sans-serif; }
-        .fas::before { display: inline-block; font-weight: 700; }
-        .fas.fa-camera::before{content:'📷';} .fas.fa-times::before{content:'×';} .fas.fa-clock::before{content:'◷';} .fas.fa-search::before{content:'⌕';} .fas.fa-sign-in-alt::before{content:'↘';} .fas.fa-users::before{content:'♟';} .fas.fa-sign-out-alt::before{content:'↗';} .fas.fa-arrow-up::before{content:'↑';} .fas.fa-info-circle::before{content:'ⓘ';} .fas.fa-building::before{content:'▣';} .fas.fa-times-circle::before{content:'⊗';} .fas.fa-fingerprint::before{content:'◉';} .fas.fa-exclamation-circle::before{content:'!';} .fas.fa-history::before{content:'↶';} .fas.fa-inbox::before{content:'▤';} .fas.fa-list::before{content:'☷';} .fas.fa-arrows-alt-h::before{content:'↔';} .fas.fa-check-circle::before{content:'✓';} .fas.fa-download::before{content:'↓';} .fas.fa-trash-alt::before{content:'⌫';} .fas.fa-chart-pie::before{content:'◔';} .fas.fa-chart-bar::before{content:'▥';} .fas.fa-cog::before{content:'⚙';} .fas.fa-bars::before{content:'☰';} .fas.fa-bell::before{content:'♢';} .fas.fa-expand::before{content:'⛶';} .fas.fa-user-check::before{content:'✓';} .fas.fa-exclamation-triangle::before{content:'⚠';} .fas.fa-arrow-down::before{content:'↓';} .fas.fa-user-times::before{content:'×';} .fas.fa-bolt::before{content:'ϟ';} .fas.fa-chart-line::before{content:'↗';} .fas.fa-th-large::before{content:'▦';} .fas.fa-long-arrow-alt-right::before{content:'→';} .fas.fa-play::before{content:'▶';} .fas.fa-stop::before{content:'■';} .fas.fa-keyboard::before{content:'⌨';} .fas.fa-plus::before{content:'+';} .fas.fa-percentage::before{content:'%';} .fas.fa-hourglass-half::before{content:'⌛';} .fas.fa-trophy::before{content:'🏆';} .fas.fa-calendar-week::before{content:'▦';} .fas.fa-business-time::before{content:'◷';} .fas.fa-user-shield::before{content:'♙';} .fas.fa-database::before{content:'▤';} .fas.fa-upload::before{content:'↑';} .fas.fa-folder-open::before{content:'▰';} .fas.fa-save::before{content:'▣';} .fas.fa-id-card::before{content:'▤';} .fas.fa-print::before{content:'🖨';} .fas.fa-user::before{content:'●';} .fas.fa-pen::before{content:'✎';} .fas.fa-trash::before{content:'⌫';} .fas.fa-check::before{content:'✓';} .fas.fa-id-badge::before{content:'▤';} .fas.fa-camera-rotate::before{content:'⟳';} .fas.fa-chevron-left::before{content:'‹';} .fas.fa-chevron-right::before{content:'›';} .fas.fa-moon::before{content:'☾';} .fas.fa-sun::before{content:'☀';} .fas.fa-table::before{content:'▦';}
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -1639,6 +1635,14 @@
             max-width: 94vw;
         }
 
+        .dossier-upload { border:1px dashed var(--border); border-radius:10px; padding:12px; background:var(--bg); }
+        .dossier-upload-row { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+        .dossier-selected-info { font-size:11px; color:var(--fg-muted); margin-top:7px; }
+        .dossier-file-list { display:flex; flex-direction:column; gap:8px; max-height:55vh; overflow:auto; }
+        .dossier-file-item { display:flex; align-items:center; gap:10px; padding:10px; border:1px solid var(--border); border-radius:9px; background:var(--card); }
+        .dossier-file-name { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .dossier-file-meta { font-size:10px; color:var(--fg-muted); margin-top:2px; }
+        .dossier-file-actions { display:flex; gap:5px; }
         .employee-camera-frame {
             position: relative;
             background: #000;
@@ -2715,6 +2719,7 @@
                                 <th>Type de contrat</th>
                                 <th>Statut</th>
                                 <th>Badge</th>
+                                <th>Dossier</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -3091,6 +3096,18 @@
                 </div>
             </div>
 
+            <div class="form-group">
+                <label class="form-label">Dossier</label>
+                <div class="dossier-upload">
+                    <div class="dossier-upload-row">
+                        <div style="font-size:12px;color:var(--fg-muted);">Importer tous les fichiers du dossier de l'employe</div>
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('empDossierFiles').click()"><i class="fas fa-folder-open"></i> Importer le dossier</button>
+                    </div>
+                    <input type="file" id="empDossierFiles" multiple webkitdirectory directory style="display:none" onchange="updateDossierSelection(event)">
+                    <div class="dossier-selected-info" id="dossierSelectedInfo">Aucun fichier selectionne</div>
+                </div>
+            </div>
+
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
                 <div class="form-group">
                     <label class="form-label">CIN</label>
@@ -3152,6 +3169,18 @@
                 <i class="fas fa-save"></i> Enregistrer
             </button>
         </div>
+    </div>
+</div>
+
+<!-- Modale: Dossier employe -->
+<div class="modal-overlay" id="employeeDossierModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 id="employeeDossierTitle"><i class="fas fa-folder-open"></i> Dossier de l'employe</h3>
+            <button class="modal-close" onclick="closeModal('employeeDossierModal')"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body"><div id="employeeDossierList" class="dossier-file-list"></div></div>
+        <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('employeeDossierModal')">Fermer</button></div>
     </div>
 </div>
 
@@ -4878,6 +4907,31 @@ async function downloadEmployeeBadgesA4JPG() {
     }
 }
 
+// ============================================================
+// DOSSIER EMPLOYE - stockage local IndexedDB, tous types
+// ============================================================
+const EMPLOYEE_DOSSIER_DB = 'gestionRHProEmployeeDossiers';
+const EMPLOYEE_DOSSIER_STORE = 'files';
+let employeeDossierDbPromise = null;
+function openEmployeeDossierDb(){
+ if(employeeDossierDbPromise)return employeeDossierDbPromise;
+ employeeDossierDbPromise=new Promise((resolve,reject)=>{if(!window.indexedDB)return reject(new Error('IndexedDB indisponible'));const r=indexedDB.open(EMPLOYEE_DOSSIER_DB,1);r.onupgradeneeded=e=>{const db=e.target.result;if(!db.objectStoreNames.contains(EMPLOYEE_DOSSIER_STORE)){const st=db.createObjectStore(EMPLOYEE_DOSSIER_STORE,{keyPath:'id'});st.createIndex('employeeId','employeeId',{unique:false});}};r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});
+ return employeeDossierDbPromise;
+}
+function dossierFileId(empId){return String(empId)+'_'+Date.now()+'_'+Math.random().toString(36).slice(2);}
+async function saveEmployeeDossierFiles(empId,files){if(!files.length)return;const db=await openEmployeeDossierDb();await new Promise((resolve,reject)=>{const tx=db.transaction(EMPLOYEE_DOSSIER_STORE,'readwrite'),st=tx.objectStore(EMPLOYEE_DOSSIER_STORE);files.forEach(f=>st.put({id:dossierFileId(empId),employeeId:String(empId),name:f.name||'Fichier',type:f.type||'application/octet-stream',size:f.size||0,relativePath:f.webkitRelativePath||'',blob:f,createdAt:Date.now()}));tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);});}
+async function getEmployeeDossierFiles(empId){const db=await openEmployeeDossierDb();return new Promise((resolve,reject)=>{const r=db.transaction(EMPLOYEE_DOSSIER_STORE,'readonly').objectStore(EMPLOYEE_DOSSIER_STORE).index('employeeId').getAll(String(empId));r.onsuccess=()=>resolve(r.result||[]);r.onerror=()=>reject(r.error);});}
+async function findEmployeeDossierFile(id){const db=await openEmployeeDossierDb();return new Promise((resolve,reject)=>{const r=db.transaction(EMPLOYEE_DOSSIER_STORE,'readonly').objectStore(EMPLOYEE_DOSSIER_STORE).get(id);r.onsuccess=()=>resolve(r.result||null);r.onerror=()=>reject(r.error);});}
+async function deleteEmployeeDossierFile(id){const db=await openEmployeeDossierDb();return new Promise((resolve,reject)=>{const tx=db.transaction(EMPLOYEE_DOSSIER_STORE,'readwrite');tx.objectStore(EMPLOYEE_DOSSIER_STORE).delete(id);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);});}
+async function deleteEmployeeDossierFiles(empId){for(const f of await getEmployeeDossierFiles(empId))await deleteEmployeeDossierFile(f.id);}
+function formatDossierFileSize(n){if(!n)return'0 Ko';const u=['octets','Ko','Mo','Go'];let i=0,x=n;while(x>=1024&&i<3){x/=1024;i++;}return(i?x.toFixed(x>=10?0:1):Math.round(x))+' '+u[i];}
+function escapeDossierHtml(v){return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
+function updateDossierSelection(){const i=document.getElementById('empDossierFiles'),info=document.getElementById('dossierSelectedInfo');if(!info)return;const n=i&&i.files?i.files.length:0;info.textContent=n?n+' fichier(s) selectionne(s) — tous types de fichiers acceptes':'Aucun fichier selectionne';}
+async function openEmployeeDossierById(empId){const emp=employees.find(e=>e.id===empId);if(!emp)return showToast('Employe introuvable','error');const title=document.getElementById('employeeDossierTitle'),list=document.getElementById('employeeDossierList');title.innerHTML='<i class="fas fa-folder-open"></i> Dossier de '+escapeDossierHtml(emp.nom);list.innerHTML='<div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Chargement du dossier...</p></div>';openModal('employeeDossierModal');try{const files=await getEmployeeDossierFiles(emp.id);if(!files.length){list.innerHTML='<div class="empty-state"><i class="fas fa-folder-open"></i><p>Aucun fichier enregistre dans le dossier.</p></div>';return;}list.innerHTML=files.map(f=>{const icon=f.type?.startsWith('image/')?'fa-file-image':f.type==='application/pdf'?'fa-file-pdf':'fa-file';return '<div class="dossier-file-item"><i class="fas '+icon+'" style="font-size:20px;color:var(--accent);"></i><div class="dossier-file-name"><div>'+escapeDossierHtml(f.name)+'</div><div class="dossier-file-meta">'+escapeDossierHtml(f.type||'Type inconnu')+' · '+formatDossierFileSize(f.size)+'</div></div><div class="dossier-file-actions"><button class="btn-icon" title="Afficher" onclick="viewEmployeeDossierFile('+JSON.stringify(f.id)+')"><i class="fas fa-eye"></i></button><button class="btn-icon" title="Telecharger" onclick="downloadEmployeeDossierFile('+JSON.stringify(f.id)+')"><i class="fas fa-download"></i></button><button class="btn-icon delete" title="Supprimer" onclick="removeEmployeeDossierFile('+JSON.stringify(emp.id)+','+JSON.stringify(f.id)+')"><i class="fas fa-trash"></i></button></div></div>';}).join('');}catch(e){console.error(e);list.innerHTML='<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Impossible de charger le dossier.</p></div>';}}
+async function viewEmployeeDossierFile(id){try{const f=await findEmployeeDossierFile(id);if(!f?.blob)return showToast('Fichier introuvable','error');const u=URL.createObjectURL(f.blob);window.open(u,'_blank');setTimeout(()=>URL.revokeObjectURL(u),60000);}catch(e){showToast('Impossible d’afficher le fichier','error');}}
+async function downloadEmployeeDossierFile(id){try{const f=await findEmployeeDossierFile(id);if(!f?.blob)return showToast('Fichier introuvable','error');const u=URL.createObjectURL(f.blob),a=document.createElement('a');a.href=u;a.download=f.name||'fichier';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1000);}catch(e){showToast('Impossible de telecharger le fichier','error');}}
+async function removeEmployeeDossierFile(empId,id){if(!confirm('Supprimer ce fichier du dossier ?'))return;try{await deleteEmployeeDossierFile(id);await openEmployeeDossierById(empId);showToast('Fichier supprime du dossier','success');}catch(e){showToast('Impossible de supprimer le fichier','error');}}
+
 function openAddEmployeeModal() {
     document.getElementById('empModalTitle').textContent = 'Ajouter un employe';
     document.getElementById('empEditId').value = '';
@@ -4892,6 +4946,8 @@ function openAddEmployeeModal() {
     document.getElementById('empContrat').value = 'CDI';
     document.getElementById('photoPreview').innerHTML = '<i class="fas fa-camera"></i>';
     document.getElementById('photoFile').value = '';
+    document.getElementById('empDossierFiles').value = '';
+    updateDossierSelection();
     openModal('employeeModal');
 }
 
@@ -4909,6 +4965,8 @@ function openEditEmployeeModal(id) {
     document.getElementById('empDateNaissance').value = emp.dateNaissance || '';
     document.getElementById('empDateEmbauche').value = emp.dateEmbauche || '';
     document.getElementById('empContrat').value = emp.contrat || 'CDI';
+    document.getElementById('empDossierFiles').value = '';
+    updateDossierSelection();
     if (emp.photo) {
         document.getElementById('photoPreview').innerHTML = '<img src="' + emp.photo + '">';
     } else {
@@ -4927,7 +4985,7 @@ function previewPhoto(event) {
     reader.readAsDataURL(file);
 }
 
-function saveEmployee() {
+async function saveEmployee() {
     const editId = document.getElementById('empEditId').value;
     const nom = document.getElementById('empNom').value.trim();
     const matricule = document.getElementById('empMatricule').value.trim().toUpperCase();
@@ -4940,6 +4998,8 @@ function saveEmployee() {
     const contrat = document.getElementById('empContrat').value;
     const photoEl = document.getElementById('photoPreview').querySelector('img');
     const photo = photoEl ? photoEl.src : '';
+    const dossierInput = document.getElementById('empDossierFiles');
+    const dossierFiles = dossierInput && dossierInput.files ? Array.from(dossierInput.files) : [];
 
     if (!nom || !matricule) {
         showToast('Veuillez remplir le nom et le matricule', 'error');
@@ -4989,6 +5049,10 @@ function saveEmployee() {
         showToast('Employe ajoute avec succes');
     }
 
+    try {
+        if (savedEmployee && dossierFiles.length) await saveEmployeeDossierFiles(savedEmployee.id, dossierFiles);
+    } catch (e) { console.error(e); showToast("Employe enregistre, mais impossible d'enregistrer le dossier.", 'warning'); }
+
     saveData();
     closeModal('employeeModal');
     renderEmployees();
@@ -5009,6 +5073,7 @@ function deleteEmployee(id) {
     document.getElementById('confirmMessage').textContent = 'Etes-vous sur de vouloir supprimer ' + emp.nom + ' ? Cette action est irreversible.';
     document.getElementById('confirmAction').onclick = function() {
         employees = employees.filter(e => e.id !== id);
+        deleteEmployeeDossierFiles(id).catch(() => {});
         saveData();
         closeModal('confirmModal');
         renderEmployees();
@@ -5156,7 +5221,7 @@ function renderEmployees() {
     );
 
     if (filtered.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="10"><div class="empty-state"><i class="fas fa-users"></i><p>Aucun employe trouve</p></div></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="11"><div class="empty-state"><i class="fas fa-users"></i><p>Aucun employe trouve</p></div></td></tr>';
         return;
     }
 
@@ -5182,6 +5247,7 @@ function renderEmployees() {
             '<td><span class="badge" style="background:var(--bg);color:var(--fg-muted);">' + emp.contrat + '</span></td>' +
             '<td>' + statusBadge + '</td>' +
             '<td><button class="btn-icon" title="Afficher le badge" onclick="openEmployeeBadgeById(\'' + emp.id + '\')"><i class="fas fa-id-badge"></i></button></td>' +
+            '<td><button class="btn-icon" title="Afficher le dossier" onclick="openEmployeeDossierById(\'" + emp.id + "\')"><i class="fas fa-folder-open"></i></button></td>' +
             '<td><div class="actions-cell">' +
                 '<button class="btn-icon edit" title="Modifier" onclick="openEditEmployeeModal(\'' + emp.id + '\')"><i class="fas fa-pen"></i></button>' +
                 '<button class="btn-icon delete" title="Supprimer" onclick="deleteEmployee(\'' + emp.id + '\')"><i class="fas fa-trash"></i></button>' +
