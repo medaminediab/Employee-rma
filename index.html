@@ -2350,6 +2350,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
 </head>
 <body>
 
@@ -3499,6 +3500,7 @@ const CLOUD_ROOT = 'pointagepro';
 let firebaseReady = false;
 let firebaseDb = null;
 let firebaseAuth = null;
+let firebaseStorage = null;
 let firebaseListenersAttached = false;
 let firebaseCloudWriting = false;
 let firebaseUsers = {};
@@ -3512,6 +3514,7 @@ function initFirebase() {
         if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
         firebaseAuth = firebase.auth();
         firebaseDb = firebase.database();
+        firebaseStorage = firebase.storage();
         firebaseReady = true;
         return true;
     } catch (e) {
@@ -4908,7 +4911,9 @@ async function downloadEmployeeBadgesA4JPG() {
 }
 
 // ============================================================
-// DOSSIER EMPLOYE - stockage local IndexedDB, tous types
+// DOSSIER EMPLOYE - stockage Firebase Storage + IndexedDB local
+// Tous types de fichiers. Les fichiers sont envoyes en ligne et
+// les metadonnees sont conservees avec l'employe dans Realtime Database.
 // ============================================================
 const EMPLOYEE_DOSSIER_DB = 'gestionRHProEmployeeDossiers';
 const EMPLOYEE_DOSSIER_STORE = 'files';
@@ -4919,17 +4924,51 @@ function openEmployeeDossierDb(){
  return employeeDossierDbPromise;
 }
 function dossierFileId(empId){return String(empId)+'_'+Date.now()+'_'+Math.random().toString(36).slice(2);}
-async function saveEmployeeDossierFiles(empId,files){if(!files.length)return;const db=await openEmployeeDossierDb();await new Promise((resolve,reject)=>{const tx=db.transaction(EMPLOYEE_DOSSIER_STORE,'readwrite'),st=tx.objectStore(EMPLOYEE_DOSSIER_STORE);files.forEach(f=>st.put({id:dossierFileId(empId),employeeId:String(empId),name:f.name||'Fichier',type:f.type||'application/octet-stream',size:f.size||0,relativePath:f.webkitRelativePath||'',blob:f,createdAt:Date.now()}));tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);});}
-async function getEmployeeDossierFiles(empId){const db=await openEmployeeDossierDb();return new Promise((resolve,reject)=>{const r=db.transaction(EMPLOYEE_DOSSIER_STORE,'readonly').objectStore(EMPLOYEE_DOSSIER_STORE).index('employeeId').getAll(String(empId));r.onsuccess=()=>resolve(r.result||[]);r.onerror=()=>reject(r.error);});}
-async function findEmployeeDossierFile(id){const db=await openEmployeeDossierDb();return new Promise((resolve,reject)=>{const r=db.transaction(EMPLOYEE_DOSSIER_STORE,'readonly').objectStore(EMPLOYEE_DOSSIER_STORE).get(id);r.onsuccess=()=>resolve(r.result||null);r.onerror=()=>reject(r.error);});}
-async function deleteEmployeeDossierFile(id){const db=await openEmployeeDossierDb();return new Promise((resolve,reject)=>{const tx=db.transaction(EMPLOYEE_DOSSIER_STORE,'readwrite');tx.objectStore(EMPLOYEE_DOSSIER_STORE).delete(id);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);});}
-async function deleteEmployeeDossierFiles(empId){for(const f of await getEmployeeDossierFiles(empId))await deleteEmployeeDossierFile(f.id);}
+async function saveLocalDossierFile(empId,meta,file){try{const db=await openEmployeeDossierDb();await new Promise((resolve,reject)=>{const tx=db.transaction(EMPLOYEE_DOSSIER_STORE,'readwrite');tx.objectStore(EMPLOYEE_DOSSIER_STORE).put({...meta,employeeId:String(empId),blob:file});tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);});}catch(e){console.warn('Copie locale du dossier impossible',e);}}
+async function saveEmployeeDossierFiles(empId,files){
+ if(!files.length)return [];
+ if(!firebaseReady || !firebaseAuth || !firebaseAuth.currentUser || !firebaseStorage) throw new Error('Stockage Firebase indisponible ou utilisateur non connecte');
+ const emp=employees.find(e=>e.id===empId); if(!emp) throw new Error('Employe introuvable');
+ if(!Array.isArray(emp.dossierFiles)) emp.dossierFiles=[];
+ const uploaded=[];
+ for(const f of files){
+   const id=dossierFileId(empId);
+   const safeName=(f.name||'fichier').replace(/[^a-zA-Z0-9._-]/g,'_');
+   const path='pointagepro/dossiers_employes/'+String(empId)+'/'+id+'_'+safeName;
+   const ref=firebaseStorage.ref().child(path);
+   const snap=await ref.put(f,{contentType:f.type||'application/octet-stream'});
+   const url=await snap.ref.getDownloadURL();
+   const meta={id,name:f.name||'Fichier',type:f.type||'application/octet-stream',size:f.size||0,relativePath:f.webkitRelativePath||'',storagePath:path,downloadURL:url,createdAt:Date.now()};
+   emp.dossierFiles.push(meta);
+   uploaded.push(meta);
+   await saveLocalDossierFile(empId,meta,f);
+ }
+ await saveCloudData();
+ return uploaded;
+}
+async function getEmployeeDossierFiles(empId){
+ const emp=employees.find(e=>e.id===empId);
+ if(emp && Array.isArray(emp.dossierFiles) && emp.dossierFiles.length) return emp.dossierFiles;
+ try{const db=await openEmployeeDossierDb();return await new Promise((resolve,reject)=>{const r=db.transaction(EMPLOYEE_DOSSIER_STORE,'readonly').objectStore(EMPLOYEE_DOSSIER_STORE).index('employeeId').getAll(String(empId));r.onsuccess=()=>resolve(r.result||[]);r.onerror=()=>reject(r.error);});}catch(e){return [];}
+}
+async function findEmployeeDossierFile(id){
+ for(const emp of employees){const f=(emp.dossierFiles||[]).find(x=>x.id===id);if(f)return f;}
+ try{const db=await openEmployeeDossierDb();return await new Promise((resolve,reject)=>{const r=db.transaction(EMPLOYEE_DOSSIER_STORE,'readonly').objectStore(EMPLOYEE_DOSSIER_STORE).get(id);r.onsuccess=()=>resolve(r.result||null);r.onerror=()=>reject(r.error);});}catch(e){return null;}
+}
+async function deleteEmployeeDossierFile(id){
+ const f=await findEmployeeDossierFile(id);
+ if(f && f.storagePath && firebaseStorage){try{await firebaseStorage.ref().child(f.storagePath).delete();}catch(e){console.warn('Suppression Storage impossible',e);}}
+ try{const db=await openEmployeeDossierDb();await new Promise((resolve,reject)=>{const tx=db.transaction(EMPLOYEE_DOSSIER_STORE,'readwrite');tx.objectStore(EMPLOYEE_DOSSIER_STORE).delete(id);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);});}catch(e){}
+ for(const emp of employees){if(Array.isArray(emp.dossierFiles)){emp.dossierFiles=emp.dossierFiles.filter(x=>x.id!==id);}}
+ try{await saveCloudData();}catch(e){}
+}
+async function deleteEmployeeDossierFiles(empId){const files=await getEmployeeDossierFiles(empId);for(const f of files)await deleteEmployeeDossierFile(f.id);}
 function formatDossierFileSize(n){if(!n)return'0 Ko';const u=['octets','Ko','Mo','Go'];let i=0,x=n;while(x>=1024&&i<3){x/=1024;i++;}return(i?x.toFixed(x>=10?0:1):Math.round(x))+' '+u[i];}
 function escapeDossierHtml(v){return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
 function updateDossierSelection(){const i=document.getElementById('empDossierFiles'),info=document.getElementById('dossierSelectedInfo');if(!info)return;const n=i&&i.files?i.files.length:0;info.textContent=n?n+' fichier(s) selectionne(s) — tous types de fichiers acceptes':'Aucun fichier selectionne';}
-async function openEmployeeDossierById(empId){const emp=employees.find(e=>e.id===empId);if(!emp)return showToast('Employe introuvable','error');const title=document.getElementById('employeeDossierTitle'),list=document.getElementById('employeeDossierList');title.innerHTML='<i class="fas fa-folder-open"></i> Dossier de '+escapeDossierHtml(emp.nom);list.innerHTML='<div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Chargement du dossier...</p></div>';openModal('employeeDossierModal');try{const files=await getEmployeeDossierFiles(emp.id);if(!files.length){list.innerHTML='<div class="empty-state"><i class="fas fa-folder-open"></i><p>Aucun fichier enregistre dans le dossier.</p></div>';return;}list.innerHTML=files.map(f=>{const icon=f.type?.startsWith('image/')?'fa-file-image':f.type==='application/pdf'?'fa-file-pdf':'fa-file';return '<div class="dossier-file-item"><i class="fas '+icon+'" style="font-size:20px;color:var(--accent);"></i><div class="dossier-file-name"><div>'+escapeDossierHtml(f.name)+'</div><div class="dossier-file-meta">'+escapeDossierHtml(f.type||'Type inconnu')+' · '+formatDossierFileSize(f.size)+'</div></div><div class="dossier-file-actions"><button class="btn-icon" title="Afficher" onclick="viewEmployeeDossierFile('+JSON.stringify(f.id)+')"><i class="fas fa-eye"></i></button><button class="btn-icon" title="Telecharger" onclick="downloadEmployeeDossierFile('+JSON.stringify(f.id)+')"><i class="fas fa-download"></i></button><button class="btn-icon delete" title="Supprimer" onclick="removeEmployeeDossierFile('+JSON.stringify(emp.id)+','+JSON.stringify(f.id)+')"><i class="fas fa-trash"></i></button></div></div>';}).join('');}catch(e){console.error(e);list.innerHTML='<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Impossible de charger le dossier.</p></div>';}}
-async function viewEmployeeDossierFile(id){try{const f=await findEmployeeDossierFile(id);if(!f?.blob)return showToast('Fichier introuvable','error');const u=URL.createObjectURL(f.blob);window.open(u,'_blank');setTimeout(()=>URL.revokeObjectURL(u),60000);}catch(e){showToast('Impossible d’afficher le fichier','error');}}
-async function downloadEmployeeDossierFile(id){try{const f=await findEmployeeDossierFile(id);if(!f?.blob)return showToast('Fichier introuvable','error');const u=URL.createObjectURL(f.blob),a=document.createElement('a');a.href=u;a.download=f.name||'fichier';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1000);}catch(e){showToast('Impossible de telecharger le fichier','error');}}
+async function openEmployeeDossierById(empId){const emp=employees.find(e=>e.id===empId);if(!emp)return showToast('Employe introuvable','error');const title=document.getElementById('employeeDossierTitle'),list=document.getElementById('employeeDossierList');title.innerHTML='<i class="fas fa-folder-open"></i> Dossier de '+escapeDossierHtml(emp.nom);list.innerHTML='<div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Chargement du dossier en ligne...</p></div>';openModal('employeeDossierModal');try{const files=await getEmployeeDossierFiles(emp.id);if(!files.length){list.innerHTML='<div class="empty-state"><i class="fas fa-folder-open"></i><p>Aucun fichier enregistre dans le dossier.</p></div>';return;}list.innerHTML=files.map(f=>{const icon=f.type?.startsWith('image/')?'fa-file-image':f.type==='application/pdf'?'fa-file-pdf':'fa-file';return '<div class="dossier-file-item"><i class="fas '+icon+'" style="font-size:20px;color:var(--accent);"></i><div class="dossier-file-name"><div>'+escapeDossierHtml(f.name)+'</div><div class="dossier-file-meta">'+escapeDossierHtml(f.type||'Type inconnu')+' · '+formatDossierFileSize(f.size)+(f.storagePath?' · En ligne':' · Local')+'</div></div><div class="dossier-file-actions"><button class="btn-icon" title="Afficher" onclick="viewEmployeeDossierFile('+JSON.stringify(f.id)+')"><i class="fas fa-eye"></i></button><button class="btn-icon" title="Telecharger" onclick="downloadEmployeeDossierFile('+JSON.stringify(f.id)+')"><i class="fas fa-download"></i></button><button class="btn-icon delete" title="Supprimer" onclick="removeEmployeeDossierFile('+JSON.stringify(emp.id)+','+JSON.stringify(f.id)+')"><i class="fas fa-trash"></i></button></div></div>';}).join('');}catch(e){console.error(e);list.innerHTML='<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Impossible de charger le dossier.</p></div>';}}
+async function viewEmployeeDossierFile(id){try{const f=await findEmployeeDossierFile(id);if(!f)return showToast('Fichier introuvable','error');if(f.downloadURL){window.open(f.downloadURL,'_blank');return;}if(f.blob){const u=URL.createObjectURL(f.blob);window.open(u,'_blank');setTimeout(()=>URL.revokeObjectURL(u),60000);return;}showToast('Fichier introuvable','error');}catch(e){showToast('Impossible d’afficher le fichier','error');}}
+async function downloadEmployeeDossierFile(id){try{const f=await findEmployeeDossierFile(id);if(!f)return showToast('Fichier introuvable','error');if(f.downloadURL){const a=document.createElement('a');a.href=f.downloadURL;a.target='_blank';a.rel='noopener';a.download=f.name||'fichier';document.body.appendChild(a);a.click();a.remove();return;}if(f.blob){const u=URL.createObjectURL(f.blob),a=document.createElement('a');a.href=u;a.download=f.name||'fichier';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1000);return;}showToast('Fichier introuvable','error');}catch(e){showToast('Impossible de telecharger le fichier','error');}}
 async function removeEmployeeDossierFile(empId,id){if(!confirm('Supprimer ce fichier du dossier ?'))return;try{await deleteEmployeeDossierFile(id);await openEmployeeDossierById(empId);showToast('Fichier supprime du dossier','success');}catch(e){showToast('Impossible de supprimer le fichier','error');}}
 
 function openAddEmployeeModal() {
@@ -5028,6 +5067,7 @@ async function saveEmployee() {
             emp.dateEmbauche = dateEmbauche;
             emp.contrat = contrat;
             emp.photo = photo;
+            if (!Array.isArray(emp.dossierFiles)) emp.dossierFiles = [];
             savedEmployee = emp;
             showToast('Employe modifie avec succes');
         }
@@ -5043,15 +5083,20 @@ async function saveEmployee() {
             dateNaissance,
             dateEmbauche,
             contrat,
-            photo
+            photo,
+            dossierFiles: []
         };
         employees.push(savedEmployee);
         showToast('Employe ajoute avec succes');
     }
 
     try {
-        if (savedEmployee && dossierFiles.length) await saveEmployeeDossierFiles(savedEmployee.id, dossierFiles);
-    } catch (e) { console.error(e); showToast("Employe enregistre, mais impossible d'enregistrer le dossier.", 'warning'); }
+        if (savedEmployee && dossierFiles.length) {
+            showToast('Envoi du dossier en ligne...');
+            await saveEmployeeDossierFiles(savedEmployee.id, dossierFiles);
+            showToast('Dossier enregistre en ligne avec succes', 'success');
+        }
+    } catch (e) { console.error(e); showToast("Employe enregistre, mais impossible d'enregistrer le dossier en ligne. Verifiez la connexion et les regles Firebase Storage.", 'warning'); }
 
     saveData();
     closeModal('employeeModal');
