@@ -4927,6 +4927,8 @@ function dossierFileId(empId){return String(empId)+'_'+Date.now()+'_'+Math.rando
 async function saveLocalDossierFile(empId,meta,file){try{const db=await openEmployeeDossierDb();await new Promise((resolve,reject)=>{const tx=db.transaction(EMPLOYEE_DOSSIER_STORE,'readwrite');tx.objectStore(EMPLOYEE_DOSSIER_STORE).put({...meta,employeeId:String(empId),blob:file});tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);});}catch(e){console.warn('Copie locale du dossier impossible',e);}}
 async function saveEmployeeDossierFiles(empId,files){
  if(!files.length)return [];
+ files=files.filter(f=>f && (f.type==='application/pdf' || /\.pdf$/i.test(f.name||'')));
+ if(!files.length) throw new Error('Le dossier doit être un fichier PDF');
  if(!firebaseReady || !firebaseAuth || !firebaseAuth.currentUser || !firebaseStorage) throw new Error('Stockage Firebase indisponible ou utilisateur non connecte');
  const emp=employees.find(e=>e.id===empId); if(!emp) throw new Error('Employe introuvable');
  if(!Array.isArray(emp.dossierFiles)) emp.dossierFiles=[];
@@ -5292,7 +5294,7 @@ function renderEmployees() {
             '<td><span class="badge" style="background:var(--bg);color:var(--fg-muted);">' + emp.contrat + '</span></td>' +
             '<td>' + statusBadge + '</td>' +
             '<td><button class="btn-icon" title="Afficher le badge" onclick="openEmployeeBadgeById(\'' + emp.id + '\')"><i class="fas fa-id-badge"></i></button></td>' +
-            '<td><button class="btn-icon" title="Afficher le dossier" onclick="openEmployeeDossierById(\'" + emp.id + "\')"><i class="fas fa-folder-open"></i></button></td>' +
+            '<td><button class="btn-icon" title="Afficher le dossier" onclick="openEmployeeDossierById(\'' + emp.id + '\')"><i class="fas fa-folder-open"></i></button></td>' +
             '<td><div class="actions-cell">' +
                 '<button class="btn-icon edit" title="Modifier" onclick="openEditEmployeeModal(\'' + emp.id + '\')"><i class="fas fa-pen"></i></button>' +
                 '<button class="btn-icon delete" title="Supprimer" onclick="deleteEmployee(\'' + emp.id + '\')"><i class="fas fa-trash"></i></button>' +
