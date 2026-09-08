@@ -4938,40 +4938,29 @@ async function saveEmployeeDossierFiles(empId,files){
    const safeName=(f.name||'dossier.pdf').replace(/[^a-zA-Z0-9._-]/g,'_');
    const path='pointagepro/dossiers_employes/'+String(empId)+'/'+id+'_'+safeName;
    try {
-     const ref=firebaseStorage.ref().child(path);
      showToast('Téléversement du PDF en cours...');
-     const uploadTask=ref.put(f,{contentType:'application/pdf'});
-     const snap=await new Promise((resolve,reject)=>{
-       let finished=false;
-       const timeout=setTimeout(()=>{
-         if(finished)return;
-         finished=true;
-         try{uploadTask.cancel();}catch(_){}
-         reject(new Error('Le téléversement Firebase dépasse 60 secondes. Vérifiez la connexion Internet et les règles Firebase Storage.'));
-       },60000);
-       uploadTask.on(firebase.storage.TaskEvent.STATE_CHANGED,
-         function(snapshot){
-           if(snapshot && snapshot.totalBytes){
-             const pct=Math.round((snapshot.bytesTransferred/snapshot.totalBytes)*100);
-             showToast('Téléversement du PDF : '+pct+'%');
-           }
-         },
-         function(error){
-           if(finished)return;
-           finished=true;
-           clearTimeout(timeout);
-           reject(error);
-         },
-         function(){
-           if(finished)return;
-           finished=true;
-           clearTimeout(timeout);
-           resolve(uploadTask.snapshot);
-         }
-       );
+     const user=firebaseAuth.currentUser;
+     const token=await user.getIdToken(true);
+     const bucket=String(FIREBASE_CONFIG.storageBucket || '').trim();
+     if(!bucket) throw new Error('Le bucket Firebase Storage est absent de la configuration.');
+     const uploadUrl='https://firebasestorage.googleapis.com/v0/b/'+encodeURIComponent(bucket)+'/o?uploadType=media&name='+encodeURIComponent(path);
+     const response=await new Promise((resolve,reject)=>{
+       const xhr=new XMLHttpRequest();
+       let lastPct=-1;
+       const timeout=setTimeout(()=>{try{xhr.abort();}catch(_){} reject(new Error('Le téléversement Firebase dépasse 60 secondes. Vérifiez la connexion Internet, le bucket Storage et les règles Firebase Storage.'));},60000);
+       xhr.open('POST',uploadUrl,true);
+       xhr.setRequestHeader('Authorization','Bearer '+token);
+       xhr.setRequestHeader('Content-Type','application/pdf');
+       xhr.upload.onprogress=function(ev){if(ev.lengthComputable){const pct=Math.round((ev.loaded/ev.total)*100);if(pct!==lastPct){lastPct=pct;showToast('Téléversement du PDF : '+pct+'%');}}};
+       xhr.onload=function(){clearTimeout(timeout);if(xhr.status>=200&&xhr.status<300){try{resolve(JSON.parse(xhr.responseText));}catch(e){reject(new Error('Réponse Firebase Storage invalide.'));}}else{let msg=xhr.responseText||('HTTP '+xhr.status);try{const j=JSON.parse(xhr.responseText);if(j.error&&j.error.message)msg=j.error.message;}catch(_){} reject(new Error('Firebase Storage HTTP '+xhr.status+' : '+msg));}};
+       xhr.onerror=function(){clearTimeout(timeout);reject(new Error('Erreur réseau pendant le téléversement vers Firebase Storage.'));};
+       xhr.onabort=function(){clearTimeout(timeout);reject(new Error('Téléversement Firebase interrompu.'));};
+       xhr.send(f);
      });
      showToast('PDF envoyé sur Firebase, finalisation...');
-     const url=await snap.ref.getDownloadURL();
+     let url='';
+     if(response.downloadTokens){url='https://firebasestorage.googleapis.com/v0/b/'+encodeURIComponent(bucket)+'/o/'+encodeURIComponent(path)+'?alt=media&token='+encodeURIComponent(String(response.downloadTokens).split(',')[0]);}
+     else {const ref=firebaseStorage.ref().child(path);url=await ref.getDownloadURL();}
      showToast('Lien du PDF récupéré, enregistrement...');
      const meta={id,name:f.name||'dossier.pdf',type:'application/pdf',size:f.size||0,relativePath:f.webkitRelativePath||'',storagePath:path,downloadURL:url,createdAt:Date.now()};
      emp.dossierFiles.push(meta);
