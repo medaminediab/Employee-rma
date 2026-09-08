@@ -4929,28 +4929,48 @@ async function saveEmployeeDossierFiles(empId,files){
  if(!files.length)return [];
  files=files.filter(f=>f && (f.type==='application/pdf' || /\.pdf$/i.test(f.name||'')));
  if(!files.length) throw new Error('Le dossier doit être un fichier PDF');
- if(!firebaseReady || !firebaseAuth || !firebaseAuth.currentUser || !firebaseStorage) throw new Error('Stockage Firebase indisponible ou utilisateur non connecte');
+ if(!firebaseReady || !firebaseAuth || !firebaseAuth.currentUser || !firebaseStorage || !firebaseDb) throw new Error('Stockage Firebase indisponible ou utilisateur non connecte');
  const emp=employees.find(e=>e.id===empId); if(!emp) throw new Error('Employe introuvable');
  if(!Array.isArray(emp.dossierFiles)) emp.dossierFiles=[];
  const uploaded=[];
  for(const f of files){
    const id=dossierFileId(empId);
-   const safeName=(f.name||'fichier').replace(/[^a-zA-Z0-9._-]/g,'_');
+   const safeName=(f.name||'dossier.pdf').replace(/[^a-zA-Z0-9._-]/g,'_');
    const path='pointagepro/dossiers_employes/'+String(empId)+'/'+id+'_'+safeName;
    const ref=firebaseStorage.ref().child(path);
-   const snap=await ref.put(f,{contentType:f.type||'application/octet-stream'});
+   const snap=await ref.put(f,{contentType:'application/pdf'});
    const url=await snap.ref.getDownloadURL();
-   const meta={id,name:f.name||'Fichier',type:f.type||'application/octet-stream',size:f.size||0,relativePath:f.webkitRelativePath||'',storagePath:path,downloadURL:url,createdAt:Date.now()};
+   const meta={id,name:f.name||'dossier.pdf',type:'application/pdf',size:f.size||0,relativePath:f.webkitRelativePath||'',storagePath:path,downloadURL:url,createdAt:Date.now()};
    emp.dossierFiles.push(meta);
    uploaded.push(meta);
    await saveLocalDossierFile(empId,meta,f);
  }
+ // Enregistrer les métadonnées du dossier dans un noeud dédié :
+ // cela évite qu'une synchronisation des employés ne puisse les écraser.
+ await firebaseDb.ref(CLOUD_ROOT+'/employeeDossiers/'+String(empId)).set(emp.dossierFiles);
  await saveCloudData();
  return uploaded;
 }
 async function getEmployeeDossierFiles(empId){
+ // 1) Source principale : métadonnées dédiées dans Realtime Database.
+ if(firebaseReady && firebaseDb && firebaseAuth && firebaseAuth.currentUser){
+   try{
+     const snap=await firebaseDb.ref(CLOUD_ROOT+'/employeeDossiers/'+String(empId)).once('value');
+     if(snap.exists()){
+       const data=snap.val();
+       const files=Array.isArray(data)?data:Object.keys(data||{}).map(k=>data[k]).filter(Boolean);
+       if(files.length){
+         const emp=employees.find(e=>e.id===empId);
+         if(emp) emp.dossierFiles=files;
+         return files;
+       }
+     }
+   }catch(e){console.warn('Lecture du dossier Firebase impossible',e);}
+ }
+ // 2) Fallback : métadonnées déjà présentes avec l'employé.
  const emp=employees.find(e=>e.id===empId);
  if(emp && Array.isArray(emp.dossierFiles) && emp.dossierFiles.length) return emp.dossierFiles;
+ // 3) Dernier fallback : copie locale hors ligne.
  try{const db=await openEmployeeDossierDb();return await new Promise((resolve,reject)=>{const r=db.transaction(EMPLOYEE_DOSSIER_STORE,'readonly').objectStore(EMPLOYEE_DOSSIER_STORE).index('employeeId').getAll(String(empId));r.onsuccess=()=>resolve(r.result||[]);r.onerror=()=>reject(r.error);});}catch(e){return [];}
 }
 async function findEmployeeDossierFile(id){
@@ -4961,8 +4981,15 @@ async function deleteEmployeeDossierFile(id){
  const f=await findEmployeeDossierFile(id);
  if(f && f.storagePath && firebaseStorage){try{await firebaseStorage.ref().child(f.storagePath).delete();}catch(e){console.warn('Suppression Storage impossible',e);}}
  try{const db=await openEmployeeDossierDb();await new Promise((resolve,reject)=>{const tx=db.transaction(EMPLOYEE_DOSSIER_STORE,'readwrite');tx.objectStore(EMPLOYEE_DOSSIER_STORE).delete(id);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);});}catch(e){}
- for(const emp of employees){if(Array.isArray(emp.dossierFiles)){emp.dossierFiles=emp.dossierFiles.filter(x=>x.id!==id);}}
- try{await saveCloudData();}catch(e){}
+ let ownerId=null;
+ for(const emp of employees){if(Array.isArray(emp.dossierFiles) && emp.dossierFiles.some(x=>x.id===id)){ownerId=emp.id;emp.dossierFiles=emp.dossierFiles.filter(x=>x.id!==id);}}
+ try{
+   if(ownerId && firebaseReady && firebaseDb && firebaseAuth && firebaseAuth.currentUser){
+     const remaining=(employees.find(e=>e.id===ownerId)||{}).dossierFiles||[];
+     await firebaseDb.ref(CLOUD_ROOT+'/employeeDossiers/'+String(ownerId)).set(remaining);
+   }
+   await saveCloudData();
+ }catch(e){console.warn('Mise à jour du dossier Firebase impossible',e);}
 }
 async function deleteEmployeeDossierFiles(empId){const files=await getEmployeeDossierFiles(empId);for(const f of files)await deleteEmployeeDossierFile(f.id);}
 function formatDossierFileSize(n){if(!n)return'0 Ko';const u=['octets','Ko','Mo','Go'];let i=0,x=n;while(x>=1024&&i<3){x/=1024;i++;}return(i?x.toFixed(x>=10?0:1):Math.round(x))+' '+u[i];}
