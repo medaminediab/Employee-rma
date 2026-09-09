@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PointagePro — Gestion des Pointages</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <style>
         :root {
             --bg: #0d1117;
@@ -24,11 +25,7 @@
             --info-dim: rgba(78, 205, 196, 0.12);
         }
 
-        /* === MODE HORS CONNEXION : remplacement local des icones Font Awesome === */
-        .fas { font-style: normal; font-family: Arial, Helvetica, sans-serif; }
-        .fas::before { display: inline-block; font-weight: 700; }
-        .fas.fa-camera::before{content:'📷';} .fas.fa-times::before{content:'×';} .fas.fa-clock::before{content:'◷';} .fas.fa-search::before{content:'⌕';} .fas.fa-sign-in-alt::before{content:'↘';} .fas.fa-users::before{content:'♟';} .fas.fa-sign-out-alt::before{content:'↗';} .fas.fa-arrow-up::before{content:'↑';} .fas.fa-info-circle::before{content:'ⓘ';} .fas.fa-building::before{content:'▣';} .fas.fa-times-circle::before{content:'⊗';} .fas.fa-fingerprint::before{content:'◉';} .fas.fa-exclamation-circle::before{content:'!';} .fas.fa-history::before{content:'↶';} .fas.fa-inbox::before{content:'▤';} .fas.fa-list::before{content:'☷';} .fas.fa-arrows-alt-h::before{content:'↔';} .fas.fa-check-circle::before{content:'✓';} .fas.fa-download::before{content:'↓';} .fas.fa-trash-alt::before{content:'⌫';} .fas.fa-chart-pie::before{content:'◔';} .fas.fa-chart-bar::before{content:'▥';} .fas.fa-cog::before{content:'⚙';} .fas.fa-bars::before{content:'☰';} .fas.fa-bell::before{content:'♢';} .fas.fa-expand::before{content:'⛶';} .fas.fa-user-check::before{content:'✓';} .fas.fa-exclamation-triangle::before{content:'⚠';} .fas.fa-arrow-down::before{content:'↓';} .fas.fa-user-times::before{content:'×';} .fas.fa-bolt::before{content:'ϟ';} .fas.fa-chart-line::before{content:'↗';} .fas.fa-th-large::before{content:'▦';} .fas.fa-long-arrow-alt-right::before{content:'→';} .fas.fa-play::before{content:'▶';} .fas.fa-stop::before{content:'■';} .fas.fa-keyboard::before{content:'⌨';} .fas.fa-plus::before{content:'+';} .fas.fa-percentage::before{content:'%';} .fas.fa-hourglass-half::before{content:'⌛';} .fas.fa-trophy::before{content:'🏆';} .fas.fa-calendar-week::before{content:'▦';} .fas.fa-business-time::before{content:'◷';} .fas.fa-user-shield::before{content:'♙';} .fas.fa-database::before{content:'▤';} .fas.fa-upload::before{content:'↑';} .fas.fa-folder-open::before{content:'▰';} .fas.fa-save::before{content:'▣';} .fas.fa-id-card::before{content:'▤';} .fas.fa-print::before{content:'🖨';} .fas.fa-user::before{content:'●';} .fas.fa-pen::before{content:'✎';} .fas.fa-trash::before{content:'⌫';} .fas.fa-check::before{content:'✓';} .fas.fa-id-badge::before{content:'▤';} .fas.fa-camera-rotate::before{content:'⟳';} .fas.fa-chevron-left::before{content:'‹';} .fas.fa-chevron-right::before{content:'›';} .fas.fa-moon::before{content:'☾';} .fas.fa-sun::before{content:'☀';} .fas.fa-table::before{content:'▦';}
-
+        /* === ICÔNES PROFESSIONNELLES EN LIGNE === */
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         /* === AJOUT : mode clair / mode nuit === */
@@ -1510,6 +1507,18 @@
             .access-permissions { grid-template-columns:1fr; }
         }
 
+        .users-manager-list { display:flex; flex-direction:column; gap:10px; }
+        .managed-user-card { background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:12px; }
+        .managed-user-head { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+        .managed-user-name { font-size:13px; font-weight:700; }
+        .managed-user-login { font-size:11px; color:var(--fg-muted); margin-top:2px; }
+        .managed-user-actions { display:flex; gap:6px; }
+        .managed-user-permissions { display:grid; grid-template-columns:repeat(3,1fr); gap:7px; margin-top:10px; }
+        .managed-user-permission { display:flex; align-items:center; gap:6px; padding:7px 8px; border:1px solid var(--border); border-radius:7px; background:var(--card); font-size:11px; color:var(--fg-muted); }
+        .managed-user-permission input { accent-color:var(--accent); }
+        .user-manager-empty { text-align:center; padding:18px; color:var(--fg-muted); font-size:12px; }
+        @media (max-width:768px) { .managed-user-permissions { grid-template-columns:1fr 1fr; } }
+
         /* === NOUVEAU : Ecran de connexion configurable === */
         .login-screen {
             position: fixed;
@@ -2906,28 +2915,15 @@
             </div>
 
             <div class="report-card">
-                <h4><i class="fas fa-user"></i> Utilisateur Pointage</h4>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:10px;">
-                    <div class="form-group" style="margin-bottom:0;">
-                        <label class="form-label">Nom d'utilisateur</label>
-                        <input type="text" class="form-input" id="settUserUsername" value="pointage" onchange="saveSettings()">
-                    </div>
-                    <div class="form-group" style="margin-bottom:0;">
-                        <label class="form-label">Mot de passe</label>
-                        <input type="password" class="form-input" id="settUserPassword" value="1234" onchange="saveSettings()">
-                    </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+                    <h4 style="margin:0;"><i class="fas fa-user-shield"></i> Utilisateurs et autorisations</h4>
+                    <button type="button" class="btn btn-primary btn-sm" onclick="openUserManager()">
+                        <i class="fas fa-user-plus"></i> Ajouter un utilisateur
+                    </button>
                 </div>
-                <div class="form-label" style="margin-top:14px;">Accès autorisés</div>
-                <div class="access-permissions">
-                    <label class="access-permission"><input type="checkbox" id="accessDashboard" onchange="saveSettings()"> Tableau de bord</label>
-                    <label class="access-permission"><input type="checkbox" id="accessPointage" checked disabled> Pointage</label>
-                    <label class="access-permission"><input type="checkbox" id="accessEmployes" onchange="saveSettings()"> Employes</label>
-                    <label class="access-permission"><input type="checkbox" id="accessHistorique" onchange="saveSettings()"> Historique</label>
-                    <label class="access-permission"><input type="checkbox" id="accessRapports" onchange="saveSettings()"> Rapports</label>
-                    <label class="access-permission"><input type="checkbox" id="accessParametres" onchange="saveSettings()"> Parametres</label>
-                </div>
+                <div id="usersManagerList" class="users-manager-list" style="margin-top:14px;"></div>
                 <p style="font-size:11px;color:var(--fg-muted);margin-top:10px;line-height:1.5;">
-                    
+                    L'administrateur conserve tous les droits. Chaque utilisateur peut avoir ses propres autorisations.
                 </p>
             </div>
 
@@ -3582,20 +3578,157 @@ function getTodayPointages() {
 }
 
 let currentUserRole = 'admin';
+let currentUserId = '';
+let managedUsers = [];
+
+function defaultUserAccess() {
+    return { dashboard:false, pointage:true, employes:false, historique:false, rapports:false, parametres:false };
+}
+
+function normalizeManagedUsers(settings) {
+    let list = Array.isArray(settings && settings.users) ? settings.users : [];
+    if (!list.length && settings && settings.userUsername) {
+        list = [{
+            id: 'user-legacy',
+            name: 'Utilisateur Pointage',
+            username: settings.userUsername || 'pointage',
+            password: settings.userPassword || '1234',
+            access: Object.assign(defaultUserAccess(), settings.userAccess || {})
+        }];
+    }
+    return list.map((u, i) => ({
+        id: String(u.id || ('user-' + Date.now() + '-' + i)),
+        name: String(u.name || u.username || ('Utilisateur ' + (i + 1))),
+        username: String(u.username || '').trim(),
+        password: String(u.password || ''),
+        access: Object.assign(defaultUserAccess(), u.access || {})
+    })).filter(u => u.username);
+}
+
+function renderManagedUsers() {
+    const box = document.getElementById('usersManagerList');
+    if (!box) return;
+    managedUsers = normalizeManagedUsers({ users: managedUsers });
+    if (!managedUsers.length) {
+        box.innerHTML = '<div class="user-manager-empty">Aucun utilisateur secondaire. Cliquez sur « Ajouter un utilisateur ».</div>';
+        return;
+    }
+    box.innerHTML = managedUsers.map(u => {
+        const access = u.access || defaultUserAccess();
+        const uid = JSON.stringify(u.id).replace(/"/g,'&quot;');
+        return '<div class="managed-user-card">' +
+            '<div class="managed-user-head">' +
+                '<div><div class="managed-user-name"><i class="fas fa-user"></i> ' + escapeHtml(u.name) + '</div>' +
+                '<div class="managed-user-login">Identifiant : ' + escapeHtml(u.username) + '</div></div>' +
+                '<div class="managed-user-actions">' +
+                    '<button type="button" class="btn-icon edit" title="Modifier" onclick="editManagedUserById(' + uid + ')"><i class="fas fa-pen"></i></button>' +
+                    '<button type="button" class="btn-icon delete" title="Supprimer" onclick="deleteManagedUser(' + uid + ')"><i class="fas fa-trash"></i></button>' +
+                '</div>' +
+            '</div>' +
+            '<div class="managed-user-permissions">' +
+                '<label class="managed-user-permission"><input type="checkbox" ' + (access.dashboard?'checked':'') + ' onchange="setManagedUserAccess(' + uid.replace(/"/g,'&quot;') + ',&quot;dashboard&quot;,this.checked)"> Tableau de bord</label>' +
+                '<label class="managed-user-permission"><input type="checkbox" ' + (access.pointage?'checked':'') + ' onchange="setManagedUserAccess(' + uid.replace(/"/g,'&quot;') + ',&quot;pointage&quot;,this.checked)"> Pointage</label>' +
+                '<label class="managed-user-permission"><input type="checkbox" ' + (access.employes?'checked':'') + ' onchange="setManagedUserAccess(' + uid.replace(/"/g,'&quot;') + ',&quot;employes&quot;,this.checked)"> Employés</label>' +
+                '<label class="managed-user-permission"><input type="checkbox" ' + (access.historique?'checked':'') + ' onchange="setManagedUserAccess(' + uid.replace(/"/g,'&quot;') + ',&quot;historique&quot;,this.checked)"> Historique</label>' +
+                '<label class="managed-user-permission"><input type="checkbox" ' + (access.rapports?'checked':'') + ' onchange="setManagedUserAccess(' + uid.replace(/"/g,'&quot;') + ',&quot;rapports&quot;,this.checked)"> Rapports</label>' +
+                '<label class="managed-user-permission"><input type="checkbox" ' + (access.parametres?'checked':'') + ' onchange="setManagedUserAccess(' + uid.replace(/"/g,'&quot;') + ',&quot;parametres&quot;,this.checked)"> Paramètres</label>' +
+            '</div>' +
+        '</div>';
+    }).join('');
+}
+
+function openUserManager() {
+    const name = prompt('Nom de l’utilisateur :', '');
+    if (name === null) return;
+    const username = prompt('Nom d’utilisateur / identifiant :', '');
+    if (username === null) return;
+    const password = prompt('Mot de passe :', '');
+    if (password === null) return;
+    const cleanUsername = username.trim();
+    if (!cleanUsername || !password) { showToast('Identifiant et mot de passe obligatoires.', 'warning'); return; }
+    if (managedUsers.some(u => u.username.toLowerCase() === cleanUsername.toLowerCase())) {
+        showToast('Cet identifiant existe déjà.', 'warning'); return;
+    }
+    managedUsers.push({
+        id: 'user-' + Date.now() + '-' + Math.random().toString(36).slice(2,7),
+        name: name.trim() || cleanUsername,
+        username: cleanUsername,
+        password: password,
+        access: defaultUserAccess()
+    });
+    persistManagedUsers();
+    renderManagedUsers();
+    showToast('Utilisateur ajouté.', 'success');
+}
+
+function editManagedUserById(id) {
+    const user = managedUsers.find(u => u.id === id);
+    if (user) editManagedUser(user);
+}
+
+function editManagedUser(user) {
+    const index = managedUsers.findIndex(u => u.id === user.id);
+    if (index < 0) return;
+    const current = managedUsers[index];
+    const name = prompt('Nom de l’utilisateur :', current.name);
+    if (name === null) return;
+    const username = prompt('Nom d’utilisateur / identifiant :', current.username);
+    if (username === null) return;
+    const password = prompt('Mot de passe (laisser vide pour conserver) :', '');
+    if (password === null) return;
+    const cleanUsername = username.trim();
+    if (!cleanUsername) { showToast('Identifiant obligatoire.', 'warning'); return; }
+    if (managedUsers.some((u,i) => i !== index && u.username.toLowerCase() === cleanUsername.toLowerCase())) {
+        showToast('Cet identifiant existe déjà.', 'warning'); return;
+    }
+    current.name = name.trim() || cleanUsername;
+    current.username = cleanUsername;
+    if (password) current.password = password;
+    managedUsers[index] = current;
+    persistManagedUsers();
+    renderManagedUsers();
+    showToast('Utilisateur modifié.', 'success');
+}
+
+function deleteManagedUser(id) {
+    const user = managedUsers.find(u => u.id === id);
+    if (!user) return;
+    if (!confirm('Supprimer l’utilisateur « ' + user.name + ' » ?')) return;
+    managedUsers = managedUsers.filter(u => u.id !== id);
+    persistManagedUsers();
+    renderManagedUsers();
+    showToast('Utilisateur supprimé.', 'success');
+}
+
+function setManagedUserAccess(id, permission, enabled) {
+    const user = managedUsers.find(u => u.id === id);
+    if (!user) return;
+    if (!user.access) user.access = defaultUserAccess();
+    user.access[permission] = !!enabled;
+    persistManagedUsers();
+}
+
+function persistManagedUsers() {
+    try {
+        const s = JSON.parse(localStorage.getItem('pp_settings')) || {};
+        s.users = managedUsers;
+        localStorage.setItem('pp_settings', JSON.stringify(s));
+        if (firebaseReady && isFirebaseAdmin()) saveCloudSettings();
+    } catch(e) {}
+}
+
+function escapeHtml(value) {
+    return String(value == null ? '' : value)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+        .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
 
 function getCurrentUserAccess() {
     if (currentUserRole === 'admin') {
         return { dashboard:true, pointage:true, employes:true, historique:true, rapports:true, parametres:true };
     }
-    try {
-        const s = JSON.parse(localStorage.getItem('pp_settings')) || {};
-        return Object.assign(
-            { dashboard:false, pointage:true, employes:false, historique:false, rapports:false, parametres:false },
-            s.userAccess || {}
-        );
-    } catch(e) {
-        return { dashboard:false, pointage:true, employes:false, historique:false, rapports:false, parametres:false };
-    }
+    const user = managedUsers.find(u => u.id === currentUserId) || managedUsers.find(u => u.username === currentUserId);
+    return Object.assign(defaultUserAccess(), user && user.access ? user.access : {});
 }
 
 function applyUserAccess() {
@@ -3616,14 +3749,14 @@ function applyUserAccess() {
     const footerName = document.querySelector('.sidebar-footer .user-name');
     const footerRole = document.querySelector('.sidebar-footer .user-role');
     const footerAvatar = document.querySelector('.sidebar-footer .user-avatar');
-    if (footerName) footerName.textContent = currentUserRole === 'admin' ? 'Administrateur' : 'Utilisateur Pointage';
+    if (footerName) footerName.textContent = currentUserRole === 'admin' ? 'Administrateur' : ((managedUsers.find(u => u.id === currentUserId) || {}).name || 'Utilisateur');
     if (footerRole) footerRole.textContent = currentUserRole === 'admin' ? 'Amine Diab' : 'Accès contrôlé';
     if (footerAvatar) footerAvatar.textContent = currentUserRole === 'admin' ? 'AD' : 'UP';
 
     const mobileName = document.getElementById('mobileWelcomeName');
     const mobileCompany = document.getElementById('mobileWelcomeCompany');
     const mobileBrand = document.getElementById('mobileBrandName');
-    if (mobileName) mobileName.textContent = currentUserRole === 'admin' ? 'Administrateur 👋' : 'Utilisateur Pointage 👋';
+    if (mobileName) mobileName.textContent = currentUserRole === 'admin' ? 'Administrateur 👋' : (((managedUsers.find(u => u.id === currentUserId) || {}).name || 'Utilisateur') + ' 👋');
     try {
         const s = JSON.parse(localStorage.getItem('pp_settings')) || {};
         const company = s.entreprise || 'PointagePro';
@@ -3652,16 +3785,7 @@ function getSettings() {
         departement: document.getElementById('settDepartement').value.trim() || 'Génie civil',
         loginUsername: document.getElementById('settLoginUsername').value.trim() || 'Amine',
         loginPassword: document.getElementById('settLoginPassword').value || 'amine@123',
-        userUsername: document.getElementById('settUserUsername').value.trim() || 'pointage',
-        userPassword: document.getElementById('settUserPassword').value || '1234',
-        userAccess: {
-            dashboard: !!document.getElementById('accessDashboard').checked,
-            pointage: true,
-            employes: !!document.getElementById('accessEmployes').checked,
-            historique: !!document.getElementById('accessHistorique').checked,
-            rapports: !!document.getElementById('accessRapports').checked,
-            parametres: !!document.getElementById('accessParametres').checked
-        }
+        users: Array.isArray(managedUsers) ? managedUsers : [],
     };
 }
 
@@ -3679,16 +3803,10 @@ function loadSettings() {
             document.getElementById('settDepartement').value = s.departement || 'Génie civil';
             document.getElementById('settLoginUsername').value = s.loginUsername || 'Amine';
             document.getElementById('settLoginPassword').value = s.loginPassword || 'amine@123';
-            document.getElementById('settUserUsername').value = s.userUsername || 'pointage';
-            document.getElementById('settUserPassword').value = s.userPassword || '1234';
-            const ua = s.userAccess || {};
-            document.getElementById('accessDashboard').checked = !!ua.dashboard;
-            document.getElementById('accessPointage').checked = true;
-            document.getElementById('accessEmployes').checked = !!ua.employes;
-            document.getElementById('accessHistorique').checked = !!ua.historique;
-            document.getElementById('accessRapports').checked = !!ua.rapports;
-            document.getElementById('accessParametres').checked = !!ua.parametres;
+            managedUsers = normalizeManagedUsers(s);
+            renderManagedUsers();
         }
+        if (!s) { managedUsers = []; renderManagedUsers(); }
         if (!window.currentAppLogo) window.currentAppLogo = (s && s.appLogo) ? s.appLogo : '';
         updateLoginBranding();
         applyAppBranding();
@@ -6313,6 +6431,7 @@ function importData(event) {
             if (data.pointages) pointages = data.pointages;
             if (data.activities) activities = data.activities;
             if (data.settings) {
+                if (Array.isArray(data.settings.users)) { managedUsers = normalizeManagedUsers(data.settings); renderManagedUsers(); }
                 document.getElementById('settHeureEntree').value = data.settings.heureEntree || '08:00';
                 document.getElementById('settHeureSortie').value = data.settings.heureSortie || '17:00';
                 document.getElementById('settTolerance').value = data.settings.tolerance || 15;
@@ -6380,11 +6499,26 @@ function updateClock() {
 async function performLogin() {
     const username = document.getElementById('loginUsername').value.trim();
     const password = document.getElementById('loginPassword').value;
+    const errorEl = document.getElementById('loginError');
     let settings = {};
-    try { settings = JSON.parse(localStorage.getItem('pp_settings')) || {}; } catch(e) {}
 
-    // Nouvelle version : migre uniquement les anciens identifiants par défaut admin/1234.
-    // Les identifiants personnalisés existants ne sont pas écrasés.
+    // Recharge les paramètres depuis Firebase avant de vérifier les identifiants.
+    try {
+        if (!initFirebase()) throw new Error('firebase');
+        if (!firebaseAuth.currentUser) await firebaseAuth.signInAnonymously();
+        const remote = await loadCloudData();
+        if (remote) applyCloudData(remote);
+        settings = JSON.parse(localStorage.getItem('pp_settings')) || {};
+    } catch(e) {
+        try { settings = JSON.parse(localStorage.getItem('pp_settings')) || {}; } catch(e2) { settings = {}; }
+    }
+
+    managedUsers = normalizeManagedUsers(settings);
+    if (managedUsers.length && (!settings.users || !Array.isArray(settings.users))) {
+        settings.users = managedUsers;
+        try { localStorage.setItem('pp_settings', JSON.stringify(settings)); } catch(e) {}
+    }
+
     if (settings.loginUsername === 'admin' && settings.loginPassword === '1234') {
         settings.loginUsername = 'Amine';
         settings.loginPassword = 'amine@123';
@@ -6393,31 +6527,30 @@ async function performLogin() {
 
     const adminUsername = settings.loginUsername || 'Amine';
     const adminPassword = settings.loginPassword || 'amine@123';
-    const userUsername = settings.userUsername || 'pointage';
-    const userPassword = settings.userPassword || '1234';
-    const errorEl = document.getElementById('loginError');
+    const foundUser = managedUsers.find(u =>
+        u.username.toLowerCase() === username.toLowerCase() && u.password === password
+    );
 
     if (username === adminUsername && password === adminPassword) {
         currentUserRole = 'admin';
-        if (!initFirebase()) {
-            errorEl.textContent = 'Connexion cloud indisponible.';
-            errorEl.classList.add('show');
-            return;
-        }
+        currentUserId = '';
         try {
+            if (firebaseAuth.currentUser && firebaseAuth.currentUser.isAnonymous) await firebaseAuth.signOut();
             await firebaseAuth.signInWithEmailAndPassword(FIREBASE_ADMIN_EMAIL, password);
         } catch (e) {
             errorEl.textContent = 'Compte Administrateur Firebase non connecté. Utilisez le même mot de passe que celui saisi ici, après avoir créé le compte Firebase.';
             errorEl.classList.add('show');
             return;
         }
-    } else if (username === userUsername && password === userPassword) {
-        currentUserRole = 'user';
-        if (!initFirebase()) {
-            errorEl.textContent = 'Connexion cloud indisponible.';
+    } else if (foundUser) {
+        const access = Object.assign(defaultUserAccess(), foundUser.access || {});
+        if (!Object.keys(access).some(k => access[k])) {
+            errorEl.textContent = 'Cet utilisateur n’a aucune autorisation active.';
             errorEl.classList.add('show');
             return;
         }
+        currentUserRole = 'user';
+        currentUserId = foundUser.id;
         try {
             if (!firebaseAuth.currentUser) await firebaseAuth.signInAnonymously();
         } catch (e) {
@@ -6434,12 +6567,15 @@ async function performLogin() {
 
     sessionStorage.setItem('pp_authenticated', '1');
     sessionStorage.setItem('pp_user_role', currentUserRole);
+    sessionStorage.setItem('pp_user_id', currentUserId);
     document.getElementById('loginScreen').classList.add('hidden');
     errorEl.classList.remove('show');
     document.getElementById('loginPassword').value = '';
     applyUserAccess();
     await initializeFirebaseSync();
-    navigate(currentUserRole === 'admin' ? 'dashboard' : 'pointage');
+    const access = getCurrentUserAccess();
+    const firstPage = ['dashboard','pointage','employes','historique','rapports','parametres'].find(p => access[p]) || 'pointage';
+    navigate(firstPage);
 }
 
 function logout() {
@@ -6447,7 +6583,9 @@ function logout() {
     firebaseListenersAttached = false;
     sessionStorage.removeItem('pp_authenticated');
     sessionStorage.removeItem('pp_user_role');
+    sessionStorage.removeItem('pp_user_id');
     currentUserRole = 'admin';
+    currentUserId = '';
     document.getElementById('loginScreen').classList.remove('hidden');
     document.getElementById('loginUsername').value = '';
     document.getElementById('loginPassword').value = '';
@@ -6459,6 +6597,8 @@ function checkLogin() {
     const loginScreen = document.getElementById('loginScreen');
     if (sessionStorage.getItem('pp_authenticated') === '1') {
         currentUserRole = sessionStorage.getItem('pp_user_role') === 'user' ? 'user' : 'admin';
+        currentUserId = sessionStorage.getItem('pp_user_id') || '';
+        try { managedUsers = normalizeManagedUsers(JSON.parse(localStorage.getItem('pp_settings') || '{}')); } catch(e) { managedUsers = []; }
         loginScreen.classList.add('hidden');
         applyUserAccess();
         setTimeout(function() { initializeFirebaseSync(); }, 0);
