@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
     <title>PointagePro — Gestion des Pointages</title>
     <style>
         :root {
@@ -24,6 +23,11 @@
             --info: #4ecdc4;
             --info-dim: rgba(78, 205, 196, 0.12);
         }
+
+        /* === MODE HORS CONNEXION : remplacement local des icones Font Awesome === */
+        .fas { font-style: normal; font-family: Arial, Helvetica, sans-serif; }
+        .fas::before { display: inline-block; font-weight: 700; }
+        .fas.fa-camera::before{content:'📷';} .fas.fa-times::before{content:'×';} .fas.fa-clock::before{content:'◷';} .fas.fa-search::before{content:'⌕';} .fas.fa-sign-in-alt::before{content:'↘';} .fas.fa-users::before{content:'♟';} .fas.fa-sign-out-alt::before{content:'↗';} .fas.fa-arrow-up::before{content:'↑';} .fas.fa-info-circle::before{content:'ⓘ';} .fas.fa-building::before{content:'▣';} .fas.fa-times-circle::before{content:'⊗';} .fas.fa-fingerprint::before{content:'◉';} .fas.fa-exclamation-circle::before{content:'!';} .fas.fa-history::before{content:'↶';} .fas.fa-inbox::before{content:'▤';} .fas.fa-list::before{content:'☷';} .fas.fa-arrows-alt-h::before{content:'↔';} .fas.fa-check-circle::before{content:'✓';} .fas.fa-download::before{content:'↓';} .fas.fa-trash-alt::before{content:'⌫';} .fas.fa-chart-pie::before{content:'◔';} .fas.fa-chart-bar::before{content:'▥';} .fas.fa-cog::before{content:'⚙';} .fas.fa-bars::before{content:'☰';} .fas.fa-bell::before{content:'♢';} .fas.fa-expand::before{content:'⛶';} .fas.fa-user-check::before{content:'✓';} .fas.fa-exclamation-triangle::before{content:'⚠';} .fas.fa-arrow-down::before{content:'↓';} .fas.fa-user-times::before{content:'×';} .fas.fa-bolt::before{content:'ϟ';} .fas.fa-chart-line::before{content:'↗';} .fas.fa-th-large::before{content:'▦';} .fas.fa-long-arrow-alt-right::before{content:'→';} .fas.fa-play::before{content:'▶';} .fas.fa-stop::before{content:'■';} .fas.fa-keyboard::before{content:'⌨';} .fas.fa-plus::before{content:'+';} .fas.fa-percentage::before{content:'%';} .fas.fa-hourglass-half::before{content:'⌛';} .fas.fa-trophy::before{content:'🏆';} .fas.fa-calendar-week::before{content:'▦';} .fas.fa-business-time::before{content:'◷';} .fas.fa-user-shield::before{content:'♙';} .fas.fa-database::before{content:'▤';} .fas.fa-upload::before{content:'↑';} .fas.fa-folder-open::before{content:'▰';} .fas.fa-save::before{content:'▣';} .fas.fa-id-card::before{content:'▤';} .fas.fa-print::before{content:'🖨';} .fas.fa-user::before{content:'●';} .fas.fa-pen::before{content:'✎';} .fas.fa-trash::before{content:'⌫';} .fas.fa-check::before{content:'✓';} .fas.fa-id-badge::before{content:'▤';} .fas.fa-camera-rotate::before{content:'⟳';} .fas.fa-chevron-left::before{content:'‹';} .fas.fa-chevron-right::before{content:'›';} .fas.fa-moon::before{content:'☾';} .fas.fa-sun::before{content:'☀';} .fas.fa-table::before{content:'▦';}
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -1484,18 +1488,6 @@
         }
 
         /* === AJOUT : gestion du second utilisateur et des accès === */
-        .firebase-users-list { margin-top: 18px; border-top: 1px solid var(--border); padding-top: 16px; }
-        .firebase-user-row { display:grid; grid-template-columns:1.2fr 1fr auto; gap:10px; align-items:center; padding:10px 0; border-bottom:1px solid rgba(42,53,72,.5); }
-        .firebase-user-meta { min-width:0; }
-        .firebase-user-name { font-weight:600; font-size:13px; }
-        .firebase-user-email { font-size:11px; color:var(--fg-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-        .firebase-user-actions { display:flex; gap:6px; justify-content:flex-end; }
-        .firebase-user-access { font-size:11px; color:var(--fg-muted); line-height:1.5; }
-        .firebase-user-status { font-size:10px; font-weight:700; padding:3px 7px; border-radius:6px; margin-left:6px; }
-        .firebase-user-status.active { color:var(--accent); background:var(--accent-dim); }
-        .firebase-user-status.inactive { color:var(--danger); background:var(--danger-dim); }
-        @media (max-width: 700px) { .firebase-user-row { grid-template-columns:1fr; } .firebase-user-actions { justify-content:flex-start; } }
-
         .access-permissions {
             display:grid;
             grid-template-columns:repeat(2,1fr);
@@ -1635,14 +1627,6 @@
             max-width: 94vw;
         }
 
-        .dossier-upload { border:1px dashed var(--border); border-radius:10px; padding:12px; background:var(--bg); }
-        .dossier-upload-row { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
-        .dossier-selected-info { font-size:11px; color:var(--fg-muted); margin-top:7px; }
-        .dossier-file-list { display:flex; flex-direction:column; gap:8px; max-height:55vh; overflow:auto; }
-        .dossier-file-item { display:flex; align-items:center; gap:10px; padding:10px; border:1px solid var(--border); border-radius:9px; background:var(--card); }
-        .dossier-file-name { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-        .dossier-file-meta { font-size:10px; color:var(--fg-muted); margin-top:2px; }
-        .dossier-file-actions { display:flex; gap:5px; }
         .employee-camera-frame {
             position: relative;
             background: #000;
@@ -2350,7 +2334,6 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
 </head>
 <body>
 
@@ -2366,8 +2349,8 @@
         </div>
 
         <div class="form-group">
-            <label class="form-label">Username</label>
-            <input type="text" class="form-input" id="loginUsername" autocomplete="username" placeholder="Ex : user1">
+            <label class="form-label">Nom d'utilisateur</label>
+            <input type="text" class="form-input" id="loginUsername" autocomplete="username" placeholder="Nom d'utilisateur">
         </div>
 
         <div class="form-group">
@@ -2380,7 +2363,7 @@
         </button>
 
         <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--fg-muted);">
-            L’administrateur utilise Firebase. Les autres utilisateurs utilisent un username et un mot de passe configurés dans Paramètres.
+            Les identifiants et les accès se configurent dans Paramètres.
         </div>
     </div>
 </div>
@@ -2720,7 +2703,6 @@
                                 <th>Type de contrat</th>
                                 <th>Statut</th>
                                 <th>Badge</th>
-                                <th>Dossier</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -2949,70 +2931,6 @@
                 </p>
             </div>
 
-            <div class="report-card" id="appUsersPanel">
-                <h4><i class="fas fa-user"></i> Utilisateurs de l’application</h4>
-                <p style="font-size:11px;color:var(--fg-muted);margin-top:8px;line-height:1.5;">Ces utilisateurs ne sont pas des comptes Firebase. Exemple : <b>Username : user1</b> / <b>Mot de passe : 123456789</b>. Les comptes et leurs droits sont synchronisés en ligne dans Firebase.</p>
-                <input type="hidden" id="editAppUserUsername" value="">
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:14px;">
-                    <div class="form-group" style="margin-bottom:0;"><label class="form-label">Nom affiché</label><input type="text" class="form-input" id="newAppUserName" placeholder="Ex : Responsable RH"></div>
-                    <div class="form-group" style="margin-bottom:0;"><label class="form-label">Username</label><input type="text" class="form-input" id="newAppUserUsername" placeholder="Ex : user1"></div>
-                    <div class="form-group" style="margin-bottom:0;"><label class="form-label">Mot de passe</label><input type="password" class="form-input" id="newAppUserPassword" placeholder="Minimum 6 caractères"></div>
-                    <div class="form-group" style="margin-bottom:0;"><label class="form-label">Statut</label><label class="access-permission" style="margin-top:8px;"><input type="checkbox" id="newAppUserActive" checked> Utilisateur actif</label></div>
-                </div>
-                <div class="form-label" style="margin-top:16px;">Accès autorisés</div>
-                <div class="access-permissions">
-                    <label class="access-permission"><input type="checkbox" id="newAppUserAccessDashboard"> Tableau de bord</label>
-                    <label class="access-permission"><input type="checkbox" id="newAppUserAccessPointage" checked disabled> Pointage</label>
-                    <label class="access-permission"><input type="checkbox" id="newAppUserAccessEmployes"> Employes</label>
-                    <label class="access-permission"><input type="checkbox" id="newAppUserAccessHistorique"> Historique</label>
-                    <label class="access-permission"><input type="checkbox" id="newAppUserAccessRapports"> Rapports</label>
-                    <label class="access-permission"><input type="checkbox" id="newAppUserAccessParametres"> Parametres</label>
-                </div>
-                <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;">
-                    <button class="btn btn-primary" id="appUserSaveBtn" type="button" onclick="saveAppUser()"><i class="fas fa-plus"></i> Ajouter l'utilisateur</button>
-                    <button class="btn btn-secondary" type="button" onclick="resetAppUserForm()">Annuler</button>
-                </div>
-                <div id="appUsersList" style="margin-top:18px;display:grid;gap:8px;"></div>
-            </div>
-
-            <div class="report-card" id="firebaseUsersPanel">
-                <h4><i class="fas fa-user-shield"></i> Gestion des utilisateurs Firebase</h4>
-                <p style="font-size:11px;color:var(--fg-muted);margin-top:8px;line-height:1.5;">Ajoutez plusieurs utilisateurs avec leur email Firebase, mot de passe et droits d'accès. Les changements de droits sont enregistrés en ligne dans Firebase.</p>
-                <input type="hidden" id="editFirebaseUserUid" value="">
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:14px;">
-                    <div class="form-group" style="margin-bottom:0;">
-                        <label class="form-label">Nom affiché</label>
-                        <input type="text" class="form-input" id="newFirebaseUserName" placeholder="Ex : Responsable RH">
-                    </div>
-                    <div class="form-group" style="margin-bottom:0;">
-                        <label class="form-label">Email Firebase</label>
-                        <input type="email" class="form-input" id="newFirebaseUserEmail" placeholder="utilisateur@entreprise.com">
-                    </div>
-                    <div class="form-group" style="margin-bottom:0;">
-                        <label class="form-label">Mot de passe</label>
-                        <input type="password" class="form-input" id="newFirebaseUserPassword" placeholder="Minimum 6 caractères">
-                    </div>
-                    <div class="form-group" style="margin-bottom:0;">
-                        <label class="form-label">Statut</label>
-                        <label class="access-permission" style="margin-top:8px;"><input type="checkbox" id="newFirebaseUserActive" checked> Utilisateur actif</label>
-                    </div>
-                </div>
-                <div class="form-label" style="margin-top:16px;">Accès autorisés</div>
-                <div class="access-permissions">
-                    <label class="access-permission"><input type="checkbox" id="newUserAccessDashboard"> Tableau de bord</label>
-                    <label class="access-permission"><input type="checkbox" id="newUserAccessPointage" checked disabled> Pointage</label>
-                    <label class="access-permission"><input type="checkbox" id="newUserAccessEmployes"> Employés</label>
-                    <label class="access-permission"><input type="checkbox" id="newUserAccessHistorique"> Historique</label>
-                    <label class="access-permission"><input type="checkbox" id="newUserAccessRapports"> Rapports</label>
-                    <label class="access-permission"><input type="checkbox" id="newUserAccessParametres"> Paramètres</label>
-                </div>
-                <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;">
-                    <button class="btn btn-primary" id="firebaseUserSaveBtn" type="button" onclick="createFirebaseUser()"><i class="fas fa-plus"></i> Ajouter l'utilisateur</button>
-                    <button class="btn btn-secondary" type="button" onclick="resetFirebaseUserForm()">Réinitialiser</button>
-                </div>
-                <div class="firebase-users-list" id="firebaseUsersList"></div>
-            </div>
-
             <div class="report-card">
                 <h4><i class="fas fa-info-circle"></i> A propos</h4>
                 <p style="font-size: 13px; color: var(--fg-muted); margin-top: 8px; line-height: 1.7;">
@@ -3097,18 +3015,6 @@
                 </div>
             </div>
 
-            <div class="form-group">
-                <label class="form-label">Dossier</label>
-                <div class="dossier-upload">
-                    <div class="dossier-upload-row">
-                        <div style="font-size:12px;color:var(--fg-muted);">Importer le fichier PDF du dossier de l'employe</div>
-                        <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('empDossierFiles').click()"><i class="fas fa-file-pdf"></i> Importer le dossier PDF</button>
-                    </div>
-                    <input type="file" id="empDossierFiles" accept="application/pdf,.pdf" style="display:none" onchange="updateDossierSelection(event)">
-                    <div class="dossier-selected-info" id="dossierSelectedInfo">Aucun fichier PDF selectionne</div>
-                </div>
-            </div>
-
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
                 <div class="form-group">
                     <label class="form-label">CIN</label>
@@ -3170,18 +3076,6 @@
                 <i class="fas fa-save"></i> Enregistrer
             </button>
         </div>
-    </div>
-</div>
-
-<!-- Modale: Dossier employe -->
-<div class="modal-overlay" id="employeeDossierModal">
-    <div class="modal">
-        <div class="modal-header">
-            <h3 id="employeeDossierTitle"><i class="fas fa-folder-open"></i> Dossier de l'employe</h3>
-            <button class="modal-close" onclick="closeModal('employeeDossierModal')"><i class="fas fa-times"></i></button>
-        </div>
-        <div class="modal-body"><div id="employeeDossierList" class="dossier-file-list"></div></div>
-        <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('employeeDossierModal')">Fermer</button></div>
     </div>
 </div>
 
@@ -3500,13 +3394,8 @@ const CLOUD_ROOT = 'pointagepro';
 let firebaseReady = false;
 let firebaseDb = null;
 let firebaseAuth = null;
-let firebaseStorage = null;
 let firebaseListenersAttached = false;
 let firebaseCloudWriting = false;
-let firebaseUsers = {};
-let appUsers = {};
-let firebaseUsersListenerAttached = false;
-let appUsersListenerAttached = false;
 
 function initFirebase() {
     try {
@@ -3514,7 +3403,6 @@ function initFirebase() {
         if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
         firebaseAuth = firebase.auth();
         firebaseDb = firebase.database();
-        firebaseStorage = firebase.storage();
         firebaseReady = true;
         return true;
     } catch (e) {
@@ -3552,8 +3440,6 @@ function cloudData() {
         pointages: pointages || {},
         activities: activities || [],
         settings: getSettingsSafeForCloud(),
-        users: firebaseUsers || {},
-        appUsers: appUsers || {},
         updatedAt: Date.now()
     };
 }
@@ -3571,14 +3457,6 @@ function applyCloudData(d) {
     if (Array.isArray(d.activities)) activities = d.activities;
     if (d.settings && typeof d.settings === 'object') {
         localStorage.setItem('pp_settings', JSON.stringify(d.settings));
-    }
-    if (d.users && typeof d.users === 'object') {
-        firebaseUsers = d.users;
-        try { renderFirebaseUsers(); } catch(e) {}
-    }
-    if (d.appUsers && typeof d.appUsers === 'object') {
-        appUsers = d.appUsers;
-        try { renderAppUsers(); } catch(e) {}
     }
     try { syncBarcodeStorage(); } catch(e) {}
     try { loadSettings(); } catch(e) {}
@@ -3609,8 +3487,6 @@ async function saveCloudData() {
                 pointages: pointages || {},
                 activities: activities || [],
                 settings: getSettingsSafeForCloud(),
-                users: firebaseUsers || {},
-                appUsers: appUsers || {},
                 updatedAt: Date.now()
             };
         } else {
@@ -3653,294 +3529,23 @@ function attachFirebaseListeners() {
     });
 }
 
-async function loadFirebaseUserProfile(uid) {
-    if (!firebaseReady || !firebaseDb || !uid) return null;
-    try {
-        const snap = await firebaseDb.ref(CLOUD_ROOT + '/users/' + uid).once('value');
-        return snap.exists() ? snap.val() : null;
-    } catch(e) {
-        console.warn('Profil utilisateur Firebase impossible :', e);
-        return null;
-    }
-}
-
-function applyFirebaseUserProfile(profile) {
-    if (!profile) return false;
-    if (profile.active === false) return false;
-    currentUserRole = 'user';
-    window.currentFirebaseUserProfile = profile;
-    localStorage.setItem('pp_current_user_access', JSON.stringify(profile.access || {}));
-    return true;
-}
-
-function attachCurrentFirebaseUserListener() {
-    if (!firebaseReady || !firebaseDb || !firebaseAuth || !firebaseAuth.currentUser || firebaseUsersListenerAttached) return;
-    if (isFirebaseAdmin()) return;
-    firebaseUsersListenerAttached = true;
-    const uid = firebaseAuth.currentUser.uid;
-    firebaseDb.ref(CLOUD_ROOT + '/users/' + uid).on('value', function(snapshot) {
-        const profile = snapshot.val();
-        if (!profile || profile.active === false) {
-            showToast('Votre compte a été désactivé par l’administrateur.', 'error');
-            logout();
-            return;
-        }
-        applyFirebaseUserProfile(profile);
-        applyUserAccess();
-        const activePage = document.querySelector('.page.active');
-        const pageName = activePage ? activePage.id.replace('page-', '') : '';
-        if (pageName && !getCurrentUserAccess()[pageName]) navigate('pointage');
-    });
-}
-
-function getFirebaseUserAccessFromForm() {
-    return {
-        dashboard: !!document.getElementById('newUserAccessDashboard').checked,
-        pointage: true,
-        employes: !!document.getElementById('newUserAccessEmployes').checked,
-        historique: !!document.getElementById('newUserAccessHistorique').checked,
-        rapports: !!document.getElementById('newUserAccessRapports').checked,
-        parametres: !!document.getElementById('newUserAccessParametres').checked
-    };
-}
-
-function resetFirebaseUserForm() {
-    const editUid = document.getElementById('editFirebaseUserUid');
-    if (editUid) editUid.value = '';
-    const saveBtn = document.getElementById('firebaseUserSaveBtn');
-    if (saveBtn) saveBtn.innerHTML = "<i class='fas fa-plus'></i> Ajouter l'utilisateur";
-    const pwd = document.getElementById('newFirebaseUserPassword');
-    if (pwd) pwd.placeholder = 'Minimum 6 caractères';
-    ['newFirebaseUserName','newFirebaseUserEmail','newFirebaseUserPassword'].forEach(function(id){
-        const el=document.getElementById(id); if(el) el.value='';
-    });
-    document.getElementById('newFirebaseUserActive').checked = true;
-    ['newUserAccessDashboard','newUserAccessEmployes','newUserAccessHistorique','newUserAccessRapports','newUserAccessParametres'].forEach(function(id){
-        const el=document.getElementById(id); if(el) el.checked=false;
-    });
-}
-
-function renderFirebaseUsers() {
-    const box = document.getElementById('firebaseUsersList');
-    if (!box) return;
-    if (currentUserRole !== 'admin') { box.innerHTML = ''; return; }
-    const entries = Object.keys(firebaseUsers || {}).map(function(uid){ return Object.assign({uid:uid}, firebaseUsers[uid]); });
-    if (!entries.length) {
-        box.innerHTML = '<div style="font-size:12px;color:var(--fg-muted);">Aucun utilisateur supplémentaire enregistré.</div>';
-        return;
-    }
-    box.innerHTML = entries.map(function(u) {
-        const a = u.access || {};
-        const access = ['pointage','dashboard','employes','historique','rapports','parametres'].filter(function(k){return a[k];}).map(function(k){
-            return ({pointage:'Pointage',dashboard:'Accueil',employes:'Employés',historique:'Historique',rapports:'Rapports',parametres:'Paramètres'})[k];
-        }).join(' · ');
-        return '<div class="firebase-user-row">' +
-            '<div class="firebase-user-meta"><div class="firebase-user-name">' + escapeHtml(u.name || 'Utilisateur') + '<span class="firebase-user-status ' + (u.active === false ? 'inactive' : 'active') + '">' + (u.active === false ? 'Désactivé' : 'Actif') + '</span></div><div class="firebase-user-email">' + escapeHtml(u.email || '') + '</div><div class="firebase-user-access">' + escapeHtml(access || 'Pointage') + '</div></div>' +
-            '<div class="firebase-user-access">Créé le ' + (u.createdAt ? new Date(u.createdAt).toLocaleDateString('fr-FR') : '—') + '</div>' +
-            '<div class="firebase-user-actions"><button class="btn btn-secondary btn-sm" type="button" onclick="editFirebaseUser(\'' + u.uid + '\')">Modifier</button><button class="btn btn-secondary btn-sm" type="button" onclick="toggleFirebaseUser(\'' + u.uid + '\')">' + (u.active === false ? 'Activer' : 'Désactiver') + '</button></div>' +
-            '</div>';
-    }).join('');
-}
-
-async function createFirebaseUser() {
-    const editUid = document.getElementById('editFirebaseUserUid').value.trim();
-    if (editUid) { await saveFirebaseUserChanges(editUid); return; }
-    if (!isFirebaseAdmin()) { showToast('Seul l’administrateur Firebase peut ajouter des utilisateurs.', 'error'); return; }
-    const name = document.getElementById('newFirebaseUserName').value.trim();
-    const email = document.getElementById('newFirebaseUserEmail').value.trim().toLowerCase();
-    const password = document.getElementById('newFirebaseUserPassword').value;
-    if (!email || !password) { showToast('Email et mot de passe obligatoires.', 'error'); return; }
-    if (password.length < 6) { showToast('Le mot de passe doit contenir au moins 6 caractères.', 'error'); return; }
-    if (!firebaseReady && !initFirebase()) { showToast('Firebase indisponible.', 'error'); return; }
-    const appName = 'pointagepro_user_creator_' + Date.now();
-    let secondaryApp = null;
-    try {
-        secondaryApp = firebase.initializeApp(FIREBASE_CONFIG, appName);
-        const secondaryAuth = secondaryApp.auth();
-        const cred = await secondaryAuth.createUserWithEmailAndPassword(email, password);
-        const profile = {
-            uid: cred.user.uid, email: email, name: name || email.split('@')[0],
-            active: document.getElementById('newFirebaseUserActive').checked,
-            access: getFirebaseUserAccessFromForm(),
-            createdAt: Date.now(), updatedAt: Date.now()
-        };
-        await firebaseDb.ref(CLOUD_ROOT + '/users/' + cred.user.uid).set(profile);
-        firebaseUsers[cred.user.uid] = profile;
-        renderFirebaseUsers();
-        resetFirebaseUserForm();
-        showToast('Utilisateur Firebase ajouté et enregistré en ligne.', 'success');
-    } catch(e) {
-        console.warn('Création utilisateur Firebase impossible :', e);
-        const msg = e && e.code === 'auth/email-already-in-use' ? 'Cet email Firebase existe déjà.' : (e.message || 'Création impossible.');
-        showToast(msg, 'error');
-    } finally {
-        try { if (secondaryApp) await secondaryApp.delete(); } catch(e) {}
-    }
-}
-
-function editFirebaseUser(uid) {
-    if (!isFirebaseAdmin()) { showToast('Accès administrateur requis.', 'error'); return; }
-    const u = firebaseUsers && firebaseUsers[uid];
-    if (!u) return;
-    document.getElementById('editFirebaseUserUid').value = uid;
-    document.getElementById('newFirebaseUserName').value = u.name || '';
-    document.getElementById('newFirebaseUserEmail').value = u.email || '';
-    document.getElementById('newFirebaseUserPassword').value = '';
-    document.getElementById('newFirebaseUserActive').checked = u.active !== false;
-    const a = u.access || {};
-    document.getElementById('newUserAccessDashboard').checked = !!a.dashboard;
-    document.getElementById('newUserAccessEmployes').checked = !!a.employes;
-    document.getElementById('newUserAccessHistorique').checked = !!a.historique;
-    document.getElementById('newUserAccessRapports').checked = !!a.rapports;
-    document.getElementById('newUserAccessParametres').checked = !!a.parametres;
-    const btn = document.getElementById('firebaseUserSaveBtn');
-    if (btn) btn.innerHTML = '<i class="fas fa-save"></i> Enregistrer les modifications';
-    document.getElementById('newFirebaseUserPassword').placeholder = 'Laisser vide pour conserver le mot de passe';
-    document.getElementById('newFirebaseUserName').focus();
-}
-
-async function saveFirebaseUserChanges(uid) {
-    if (!isFirebaseAdmin()) { showToast('Accès administrateur requis.', 'error'); return; }
-    const u = firebaseUsers && firebaseUsers[uid];
-    if (!u) return;
-    const name = document.getElementById('newFirebaseUserName').value.trim();
-    const access = getFirebaseUserAccessFromForm();
-    const active = document.getElementById('newFirebaseUserActive').checked;
-    try {
-        const updates = { name: name || u.name || u.email, active: active, access: access, updatedAt: Date.now() };
-        await firebaseDb.ref(CLOUD_ROOT + '/users/' + uid).update(updates);
-        firebaseUsers[uid] = Object.assign({}, u, updates);
-        renderFirebaseUsers();
-        resetFirebaseUserForm();
-        showToast('Droits utilisateur mis à jour en ligne.', 'success');
-    } catch(e) {
-        showToast('Modification Firebase impossible.', 'error');
-    }
-}
-
-async function toggleFirebaseUser(uid) {
-    if (!isFirebaseAdmin()) { showToast('Accès administrateur requis.', 'error'); return; }
-    const u = firebaseUsers && firebaseUsers[uid];
-    if (!u) return;
-    try {
-        u.active = u.active === false;
-        u.updatedAt = Date.now();
-        await firebaseDb.ref(CLOUD_ROOT + '/users/' + uid).update({active:u.active, updatedAt:u.updatedAt});
-        firebaseUsers[uid] = u;
-        renderFirebaseUsers();
-        showToast(u.active ? 'Utilisateur activé en ligne.' : 'Utilisateur désactivé en ligne.', 'success');
-    } catch(e) {
-        showToast('Modification Firebase impossible.', 'error');
-    }
-}
-
-async function hashAppUserPassword(password) {
-    const data = new TextEncoder().encode(password);
-    const hash = await crypto.subtle.digest('SHA-256', data);
-    return Array.from(new Uint8Array(hash)).map(function(b){ return b.toString(16).padStart(2,'0'); }).join('');
-}
-
-function getAppUserAccessFromForm() {
-    return {
-        dashboard: !!document.getElementById('newAppUserAccessDashboard').checked,
-        pointage: true,
-        employes: !!document.getElementById('newAppUserAccessEmployes').checked,
-        historique: !!document.getElementById('newAppUserAccessHistorique').checked,
-        rapports: !!document.getElementById('newAppUserAccessRapports').checked,
-        parametres: !!document.getElementById('newAppUserAccessParametres').checked
-    };
-}
-
-function resetAppUserForm() {
-    ['editAppUserUsername','newAppUserName','newAppUserUsername','newAppUserPassword'].forEach(function(id){ const el=document.getElementById(id); if(el) el.value=''; });
-    document.getElementById('newAppUserActive').checked = true;
-    ['newAppUserAccessDashboard','newAppUserAccessEmployes','newAppUserAccessHistorique','newAppUserAccessRapports','newAppUserAccessParametres'].forEach(function(id){ const el=document.getElementById(id); if(el) el.checked=false; });
-    const b=document.getElementById('appUserSaveBtn'); if(b) b.innerHTML="<i class='fas fa-plus'></i> Ajouter l'utilisateur";
-    const p=document.getElementById('newAppUserPassword'); if(p) p.placeholder='Minimum 6 caractères';
-}
-
-function renderAppUsers() {
-    const box=document.getElementById('appUsersList');
-    if(!box || currentUserRole!=='admin') return;
-    const entries=Object.keys(appUsers||{}).map(function(username){return Object.assign({username:username},appUsers[username]);});
-    if(!entries.length){ box.innerHTML='<div style="font-size:12px;color:var(--fg-muted);">Aucun utilisateur de l’application enregistré.</div>'; return; }
-    box.innerHTML=entries.map(function(u){
-        const a=u.access||{};
-        const access=['pointage','dashboard','employes','historique','rapports','parametres'].filter(function(k){return a[k];}).map(function(k){return ({pointage:'Pointage',dashboard:'Accueil',employes:'Employés',historique:'Historique',rapports:'Rapports',parametres:'Paramètres'})[k];}).join(' · ');
-        return '<div class="firebase-user-row"><div class="firebase-user-meta"><div class="firebase-user-name">'+escapeHtml(u.name||u.username)+'<span class="firebase-user-status '+(u.active===false?'inactive':'active')+'">'+(u.active===false?'Désactivé':'Actif')+'</span></div><div class="firebase-user-email">Username : '+escapeHtml(u.username||'')+'</div><div class="firebase-user-access">'+escapeHtml(access||'Pointage')+'</div></div><div class="firebase-user-actions"><button class="btn btn-secondary btn-sm" type="button" onclick="editAppUser(\''+escapeHtml(u.username||'')+'\')">Modifier</button><button class="btn btn-secondary btn-sm" type="button" onclick="toggleAppUser(\''+escapeHtml(u.username||'')+'\')">'+(u.active===false?'Activer':'Désactiver')+'</button></div></div>';
-    }).join('');
-}
-
-async function saveAppUser() {
-    if(!isFirebaseAdmin()){ showToast('Accès administrateur requis.','error'); return; }
-    const oldUsername=(document.getElementById('editAppUserUsername').value||'').trim().toLowerCase();
-    const username=(document.getElementById('newAppUserUsername').value||'').trim();
-    const name=(document.getElementById('newAppUserName').value||'').trim();
-    const password=document.getElementById('newAppUserPassword').value;
-    const active=document.getElementById('newAppUserActive').checked;
-    const access=getAppUserAccessFromForm();
-    if(!username){showToast('Le username est obligatoire.','error');return;}
-    if(/\s/.test(username)){showToast('Le username ne doit pas contenir d’espace.','error');return;}
-    if(username.toLowerCase()===FIREBASE_ADMIN_EMAIL.toLowerCase()){showToast('Ce username est réservé à l’administrateur Firebase.','error');return;}
-    if(!oldUsername && password.length<6){showToast('Le mot de passe doit contenir au moins 6 caractères.','error');return;}
-    if(!firebaseReady && !initFirebase()){showToast('Firebase indisponible.','error');return;}
-    try{
-        const key=oldUsername || username.toLowerCase();
-        if(!oldUsername && appUsers[key]){showToast('Ce username existe déjà.','error');return;}
-        const existing=appUsers[key]||{};
-        const profile={username:username.toLowerCase(),name:name||username,active:active,access:access,createdAt:existing.createdAt||Date.now(),updatedAt:Date.now()};
-        if(password) profile.passwordHash=await hashAppUserPassword(password); else if(existing.passwordHash) profile.passwordHash=existing.passwordHash;
-        if(oldUsername && key!==username.toLowerCase()){ await firebaseDb.ref(CLOUD_ROOT+'/appUsers/'+key).remove(); }
-        await firebaseDb.ref(CLOUD_ROOT+'/appUsers/'+username.toLowerCase()).set(profile);
-        appUsers[username.toLowerCase()]=profile;
-        if(oldUsername && key!==username.toLowerCase()) delete appUsers[key];
-        renderAppUsers(); resetAppUserForm(); showToast(oldUsername?'Utilisateur modifié en ligne.':'Utilisateur ajouté en ligne.','success');
-    }catch(e){console.warn(e);showToast('Enregistrement de l’utilisateur impossible.','error');}
-}
-
-function editAppUser(username){
-    if(!isFirebaseAdmin())return; const u=appUsers[username]; if(!u)return;
-    document.getElementById('editAppUserUsername').value=username;
-    document.getElementById('newAppUserUsername').value=username;
-    document.getElementById('newAppUserName').value=u.name||'';
-    document.getElementById('newAppUserPassword').value='';
-    document.getElementById('newAppUserActive').checked=u.active!==false;
-    const a=u.access||{};
-    document.getElementById('newAppUserAccessDashboard').checked=!!a.dashboard; document.getElementById('newAppUserAccessEmployes').checked=!!a.employes; document.getElementById('newAppUserAccessHistorique').checked=!!a.historique; document.getElementById('newAppUserAccessRapports').checked=!!a.rapports; document.getElementById('newAppUserAccessParametres').checked=!!a.parametres;
-    document.getElementById('newAppUserPassword').placeholder='Laisser vide pour conserver le mot de passe';
-    const b=document.getElementById('appUserSaveBtn'); if(b)b.innerHTML='<i class="fas fa-save"></i> Enregistrer les modifications';
-}
-
-async function toggleAppUser(username){
-    if(!isFirebaseAdmin())return; const u=appUsers[username]; if(!u)return;
-    try{u.active=u.active===false;u.updatedAt=Date.now();await firebaseDb.ref(CLOUD_ROOT+'/appUsers/'+username).update({active:u.active,updatedAt:u.updatedAt});renderAppUsers();showToast(u.active?'Utilisateur activé en ligne.':'Utilisateur désactivé en ligne.','success');}catch(e){showToast('Modification impossible.','error');}
-}
-
-function attachCurrentAppUserListener(){
-    if(!firebaseReady||!firebaseDb||currentUserRole!=='user'||appUsersListenerAttached||!window.currentAppUserProfile)return;
-    appUsersListenerAttached=true; const username=window.currentAppUserProfile.username;
-    firebaseDb.ref(CLOUD_ROOT+'/appUsers/'+username).on('value',function(snapshot){
-        const profile=snapshot.val();
-        if(!profile||profile.active===false){showToast('Votre compte a été désactivé par l’administrateur.','error');logout();return;}
-        window.currentAppUserProfile=profile; localStorage.setItem('pp_current_user_access',JSON.stringify(profile.access||{})); applyUserAccess();
-        const activePage=document.querySelector('.page.active'); const pageName=activePage?activePage.id.replace('page-',''):''; if(pageName&&!getCurrentUserAccess()[pageName])navigate('pointage');
-    });
-}
-
 async function initializeFirebaseSync() {
     if (!initFirebase()) return;
-    const role=currentUserRole;
-    if(role==='admin') { if(!isFirebaseAdmin()) return; }
-    else if(!firebaseAuth.currentUser) return;
-    const remote=await loadCloudData();
-    if(remote){applyCloudData(remote);try{localStorage.setItem('pp_data',JSON.stringify({employees,pointages,activities}));}catch(e){}}
-    else if(isFirebaseAdmin()) await saveCloudData();
-    attachFirebaseListeners();
-    if(role==='user'){
-        if(window.currentAppUserProfile) attachCurrentAppUserListener();
-        else if(!isFirebaseAdmin()) attachCurrentFirebaseUserListener();
+    const role = currentUserRole;
+    if (role === 'admin') {
+        // L'administrateur doit être authentifié dans Firebase avant d'écrire.
+        if (!isFirebaseAdmin()) return;
+    } else {
+        await ensureFirebaseSession('user');
     }
-    try{renderFirebaseUsers();renderAppUsers();}catch(e){}
+    const remote = await loadCloudData();
+    if (remote) {
+        applyCloudData(remote);
+        try { localStorage.setItem('pp_data', JSON.stringify({employees, pointages, activities})); } catch(e) {}
+    } else if (isFirebaseAdmin()) {
+        await saveCloudData();
+    }
+    attachFirebaseListeners();
 }
 
 function loadData() {
@@ -3983,25 +3588,6 @@ function getCurrentUserAccess() {
         return { dashboard:true, pointage:true, employes:true, historique:true, rapports:true, parametres:true };
     }
     try {
-        const appProfile = window.currentAppUserProfile;
-        if (appProfile && appProfile.access) return Object.assign(
-                { dashboard:false, pointage:true, employes:false, historique:false, rapports:false, parametres:false },
-                appProfile.access || {}
-            );
-        const profile = window.currentFirebaseUserProfile;
-        if (profile && profile.access) {
-            return Object.assign(
-                { dashboard:false, pointage:true, employes:false, historique:false, rapports:false, parametres:false },
-                profile.access || {}
-            );
-        }
-        const currentAccess = JSON.parse(localStorage.getItem('pp_current_user_access') || 'null');
-        if (currentAccess) {
-            return Object.assign(
-                { dashboard:false, pointage:true, employes:false, historique:false, rapports:false, parametres:false },
-                currentAccess
-            );
-        }
         const s = JSON.parse(localStorage.getItem('pp_settings')) || {};
         return Object.assign(
             { dashboard:false, pointage:true, employes:false, historique:false, rapports:false, parametres:false },
@@ -4030,14 +3616,14 @@ function applyUserAccess() {
     const footerName = document.querySelector('.sidebar-footer .user-name');
     const footerRole = document.querySelector('.sidebar-footer .user-role');
     const footerAvatar = document.querySelector('.sidebar-footer .user-avatar');
-    if (footerName) footerName.textContent = currentUserRole === 'admin' ? 'Administrateur' : ((window.currentAppUserProfile && window.currentAppUserProfile.name) || 'Utilisateur Pointage');
+    if (footerName) footerName.textContent = currentUserRole === 'admin' ? 'Administrateur' : 'Utilisateur Pointage';
     if (footerRole) footerRole.textContent = currentUserRole === 'admin' ? 'Amine Diab' : 'Accès contrôlé';
     if (footerAvatar) footerAvatar.textContent = currentUserRole === 'admin' ? 'AD' : 'UP';
 
     const mobileName = document.getElementById('mobileWelcomeName');
     const mobileCompany = document.getElementById('mobileWelcomeCompany');
     const mobileBrand = document.getElementById('mobileBrandName');
-    if (mobileName) mobileName.textContent = currentUserRole === 'admin' ? 'Administrateur 👋' : (((window.currentAppUserProfile && window.currentAppUserProfile.name) || 'Utilisateur Pointage') + ' 👋');
+    if (mobileName) mobileName.textContent = currentUserRole === 'admin' ? 'Administrateur 👋' : 'Utilisateur Pointage 👋';
     try {
         const s = JSON.parse(localStorage.getItem('pp_settings')) || {};
         const company = s.entreprise || 'PointagePro';
@@ -4910,128 +4496,6 @@ async function downloadEmployeeBadgesA4JPG() {
     }
 }
 
-// ============================================================
-// DOSSIER EMPLOYE - stockage Firebase Storage + IndexedDB local
-// Tous types de fichiers. Les fichiers sont envoyes en ligne et
-// les metadonnees sont conservees avec l'employe dans Realtime Database.
-// ============================================================
-const EMPLOYEE_DOSSIER_DB = 'gestionRHProEmployeeDossiers';
-const EMPLOYEE_DOSSIER_STORE = 'files';
-let employeeDossierDbPromise = null;
-function openEmployeeDossierDb(){
- if(employeeDossierDbPromise)return employeeDossierDbPromise;
- employeeDossierDbPromise=new Promise((resolve,reject)=>{if(!window.indexedDB)return reject(new Error('IndexedDB indisponible'));const r=indexedDB.open(EMPLOYEE_DOSSIER_DB,1);r.onupgradeneeded=e=>{const db=e.target.result;if(!db.objectStoreNames.contains(EMPLOYEE_DOSSIER_STORE)){const st=db.createObjectStore(EMPLOYEE_DOSSIER_STORE,{keyPath:'id'});st.createIndex('employeeId','employeeId',{unique:false});}};r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});
- return employeeDossierDbPromise;
-}
-function dossierFileId(empId){return String(empId)+'_'+Date.now()+'_'+Math.random().toString(36).slice(2);}
-async function saveLocalDossierFile(empId,meta,file){try{const db=await openEmployeeDossierDb();await new Promise((resolve,reject)=>{const tx=db.transaction(EMPLOYEE_DOSSIER_STORE,'readwrite');tx.objectStore(EMPLOYEE_DOSSIER_STORE).put({...meta,employeeId:String(empId),blob:file});tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);});}catch(e){console.warn('Copie locale du dossier impossible',e);}}
-async function saveEmployeeDossierFiles(empId,files){
- if(!files.length)return [];
- files=files.filter(f=>f && (f.type==='application/pdf' || /\.pdf$/i.test(f.name||'')));
- if(!files.length) throw new Error('Le dossier doit être un fichier PDF');
- if(!firebaseReady || !firebaseAuth || !firebaseAuth.currentUser || !firebaseStorage || !firebaseDb) throw new Error('Stockage Firebase indisponible ou utilisateur non connecte');
- const emp=employees.find(e=>e.id===empId); if(!emp) throw new Error('Employe introuvable');
- if(!Array.isArray(emp.dossierFiles)) emp.dossierFiles=[];
- const uploaded=[];
- for(const f of files){
-   const id=dossierFileId(empId);
-   const safeName=(f.name||'dossier.pdf').replace(/[^a-zA-Z0-9._-]/g,'_');
-   const path='pointagepro/dossiers_employes/'+String(empId)+'/'+id+'_'+safeName;
-   try {
-     showToast('Téléversement du PDF en cours...');
-     const user=firebaseAuth.currentUser;
-     const token=await user.getIdToken(true);
-     const bucket=String(FIREBASE_CONFIG.storageBucket || '').trim();
-     if(!bucket) throw new Error('Le bucket Firebase Storage est absent de la configuration.');
-     const uploadUrl='https://firebasestorage.googleapis.com/v0/b/'+encodeURIComponent(bucket)+'/o?uploadType=media&name='+encodeURIComponent(path);
-     const response=await new Promise((resolve,reject)=>{
-       const xhr=new XMLHttpRequest();
-       let lastPct=-1;
-       const timeout=setTimeout(()=>{try{xhr.abort();}catch(_){} reject(new Error('Le téléversement Firebase dépasse 60 secondes. Vérifiez la connexion Internet, le bucket Storage et les règles Firebase Storage.'));},60000);
-       xhr.open('POST',uploadUrl,true);
-       xhr.setRequestHeader('Authorization','Bearer '+token);
-       xhr.setRequestHeader('Content-Type','application/pdf');
-       xhr.upload.onprogress=function(ev){if(ev.lengthComputable){const pct=Math.round((ev.loaded/ev.total)*100);if(pct!==lastPct){lastPct=pct;showToast('Téléversement du PDF : '+pct+'%');}}};
-       xhr.onload=function(){clearTimeout(timeout);if(xhr.status>=200&&xhr.status<300){try{resolve(JSON.parse(xhr.responseText));}catch(e){reject(new Error('Réponse Firebase Storage invalide.'));}}else{let msg=xhr.responseText||('HTTP '+xhr.status);try{const j=JSON.parse(xhr.responseText);if(j.error&&j.error.message)msg=j.error.message;}catch(_){} reject(new Error('Firebase Storage HTTP '+xhr.status+' : '+msg));}};
-       xhr.onerror=function(){clearTimeout(timeout);reject(new Error('Erreur réseau pendant le téléversement vers Firebase Storage.'));};
-       xhr.onabort=function(){clearTimeout(timeout);reject(new Error('Téléversement Firebase interrompu.'));};
-       xhr.send(f);
-     });
-     showToast('PDF envoyé sur Firebase, finalisation...');
-     let url='';
-     if(response.downloadTokens){url='https://firebasestorage.googleapis.com/v0/b/'+encodeURIComponent(bucket)+'/o/'+encodeURIComponent(path)+'?alt=media&token='+encodeURIComponent(String(response.downloadTokens).split(',')[0]);}
-     else {const ref=firebaseStorage.ref().child(path);url=await ref.getDownloadURL();}
-     showToast('Lien du PDF récupéré, enregistrement...');
-     const meta={id,name:f.name||'dossier.pdf',type:'application/pdf',size:f.size||0,relativePath:f.webkitRelativePath||'',storagePath:path,downloadURL:url,createdAt:Date.now()};
-     emp.dossierFiles.push(meta);
-     uploaded.push(meta);
-     await saveLocalDossierFile(empId,meta,f);
-   } catch(e) {
-     console.error('Erreur Firebase Storage dossier:',e);
-     throw new Error("Echec de l'envoi du PDF : "+(e && e.message ? e.message : e));
-   }
- }
- // Enregistrer les métadonnées du dossier dans un noeud dédié :
- // cela évite qu'une synchronisation des employés ne puisse les écraser.
- try {
-   await firebaseDb.ref(CLOUD_ROOT+'/employeeDossiers/'+String(empId)).set(emp.dossierFiles);
- } catch(e) {
-   console.error('Erreur enregistrement metadonnees dossier:',e);
-   throw new Error("PDF envoyé, mais impossible d'enregistrer ses informations dans Firebase : "+(e && e.message ? e.message : e));
- }
- await saveCloudData();
- return uploaded;
-}
-async function getEmployeeDossierFiles(empId){
- // 1) Source principale : métadonnées dédiées dans Realtime Database.
- if(firebaseReady && firebaseDb && firebaseAuth && firebaseAuth.currentUser){
-   try{
-     const snap=await firebaseDb.ref(CLOUD_ROOT+'/employeeDossiers/'+String(empId)).once('value');
-     if(snap.exists()){
-       const data=snap.val();
-       const files=Array.isArray(data)?data:Object.keys(data||{}).map(k=>data[k]).filter(Boolean);
-       if(files.length){
-         const emp=employees.find(e=>e.id===empId);
-         if(emp) emp.dossierFiles=files;
-         return files;
-       }
-     }
-   }catch(e){console.warn('Lecture du dossier Firebase impossible',e);}
- }
- // 2) Fallback : métadonnées déjà présentes avec l'employé.
- const emp=employees.find(e=>e.id===empId);
- if(emp && Array.isArray(emp.dossierFiles) && emp.dossierFiles.length) return emp.dossierFiles;
- // 3) Dernier fallback : copie locale hors ligne.
- try{const db=await openEmployeeDossierDb();return await new Promise((resolve,reject)=>{const r=db.transaction(EMPLOYEE_DOSSIER_STORE,'readonly').objectStore(EMPLOYEE_DOSSIER_STORE).index('employeeId').getAll(String(empId));r.onsuccess=()=>resolve(r.result||[]);r.onerror=()=>reject(r.error);});}catch(e){return [];}
-}
-async function findEmployeeDossierFile(id){
- for(const emp of employees){const f=(emp.dossierFiles||[]).find(x=>x.id===id);if(f)return f;}
- try{const db=await openEmployeeDossierDb();return await new Promise((resolve,reject)=>{const r=db.transaction(EMPLOYEE_DOSSIER_STORE,'readonly').objectStore(EMPLOYEE_DOSSIER_STORE).get(id);r.onsuccess=()=>resolve(r.result||null);r.onerror=()=>reject(r.error);});}catch(e){return null;}
-}
-async function deleteEmployeeDossierFile(id){
- const f=await findEmployeeDossierFile(id);
- if(f && f.storagePath && firebaseStorage){try{await firebaseStorage.ref().child(f.storagePath).delete();}catch(e){console.warn('Suppression Storage impossible',e);}}
- try{const db=await openEmployeeDossierDb();await new Promise((resolve,reject)=>{const tx=db.transaction(EMPLOYEE_DOSSIER_STORE,'readwrite');tx.objectStore(EMPLOYEE_DOSSIER_STORE).delete(id);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);});}catch(e){}
- let ownerId=null;
- for(const emp of employees){if(Array.isArray(emp.dossierFiles) && emp.dossierFiles.some(x=>x.id===id)){ownerId=emp.id;emp.dossierFiles=emp.dossierFiles.filter(x=>x.id!==id);}}
- try{
-   if(ownerId && firebaseReady && firebaseDb && firebaseAuth && firebaseAuth.currentUser){
-     const remaining=(employees.find(e=>e.id===ownerId)||{}).dossierFiles||[];
-     await firebaseDb.ref(CLOUD_ROOT+'/employeeDossiers/'+String(ownerId)).set(remaining);
-   }
-   await saveCloudData();
- }catch(e){console.warn('Mise à jour du dossier Firebase impossible',e);}
-}
-async function deleteEmployeeDossierFiles(empId){const files=await getEmployeeDossierFiles(empId);for(const f of files)await deleteEmployeeDossierFile(f.id);}
-function formatDossierFileSize(n){if(!n)return'0 Ko';const u=['octets','Ko','Mo','Go'];let i=0,x=n;while(x>=1024&&i<3){x/=1024;i++;}return(i?x.toFixed(x>=10?0:1):Math.round(x))+' '+u[i];}
-function escapeDossierHtml(v){return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
-function escapeHtml(v){return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
-function updateDossierSelection(){const i=document.getElementById('empDossierFiles'),info=document.getElementById('dossierSelectedInfo');if(!info)return;const n=i&&i.files?i.files.length:0;info.textContent=n?n+' fichier(s) selectionne(s) — tous types de fichiers acceptes':'Aucun fichier PDF selectionne';}
-async function openEmployeeDossierById(empId){const emp=employees.find(e=>e.id===empId);if(!emp)return showToast('Employe introuvable','error');const title=document.getElementById('employeeDossierTitle'),list=document.getElementById('employeeDossierList');title.innerHTML='<i class="fas fa-folder-open"></i> Dossier de '+escapeDossierHtml(emp.nom);list.innerHTML='<div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Chargement du dossier en ligne...</p></div>';openModal('employeeDossierModal');try{const files=await getEmployeeDossierFiles(emp.id);if(!files.length){list.innerHTML='<div class="empty-state"><i class="fas fa-folder-open"></i><p>Aucun fichier enregistre dans le dossier.</p></div>';return;}list.innerHTML=files.map(f=>{const icon=f.type?.startsWith('image/')?'fa-file-image':f.type==='application/pdf'?'fa-file-pdf':'fa-file';return '<div class="dossier-file-item"><i class="fas '+icon+'" style="font-size:20px;color:var(--accent);"></i><div class="dossier-file-name"><div>'+escapeDossierHtml(f.name)+'</div><div class="dossier-file-meta">'+escapeDossierHtml(f.type||'Type inconnu')+' · '+formatDossierFileSize(f.size)+(f.storagePath?' · En ligne':' · Local')+'</div></div><div class="dossier-file-actions"><button class="btn-icon" title="Afficher" onclick="viewEmployeeDossierFile('+JSON.stringify(f.id)+')"><i class="fas fa-eye"></i></button><button class="btn-icon" title="Telecharger" onclick="downloadEmployeeDossierFile('+JSON.stringify(f.id)+')"><i class="fas fa-download"></i></button><button class="btn-icon delete" title="Supprimer" onclick="removeEmployeeDossierFile('+JSON.stringify(emp.id)+','+JSON.stringify(f.id)+')"><i class="fas fa-trash"></i></button></div></div>';}).join('');}catch(e){console.error(e);list.innerHTML='<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Impossible de charger le dossier.</p></div>';}}
-async function viewEmployeeDossierFile(id){try{const f=await findEmployeeDossierFile(id);if(!f)return showToast('Fichier introuvable','error');if(f.downloadURL){window.open(f.downloadURL,'_blank');return;}if(f.blob){const u=URL.createObjectURL(f.blob);window.open(u,'_blank');setTimeout(()=>URL.revokeObjectURL(u),60000);return;}showToast('Fichier introuvable','error');}catch(e){showToast('Impossible d’afficher le fichier','error');}}
-async function downloadEmployeeDossierFile(id){try{const f=await findEmployeeDossierFile(id);if(!f)return showToast('Fichier introuvable','error');if(f.downloadURL){const a=document.createElement('a');a.href=f.downloadURL;a.target='_blank';a.rel='noopener';a.download=f.name||'fichier';document.body.appendChild(a);a.click();a.remove();return;}if(f.blob){const u=URL.createObjectURL(f.blob),a=document.createElement('a');a.href=u;a.download=f.name||'fichier';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1000);return;}showToast('Fichier introuvable','error');}catch(e){showToast('Impossible de telecharger le fichier','error');}}
-async function removeEmployeeDossierFile(empId,id){if(!confirm('Supprimer ce fichier du dossier ?'))return;try{await deleteEmployeeDossierFile(id);await openEmployeeDossierById(empId);showToast('Fichier supprime du dossier','success');}catch(e){showToast('Impossible de supprimer le fichier','error');}}
-
 function openAddEmployeeModal() {
     document.getElementById('empModalTitle').textContent = 'Ajouter un employe';
     document.getElementById('empEditId').value = '';
@@ -5046,8 +4510,6 @@ function openAddEmployeeModal() {
     document.getElementById('empContrat').value = 'CDI';
     document.getElementById('photoPreview').innerHTML = '<i class="fas fa-camera"></i>';
     document.getElementById('photoFile').value = '';
-    document.getElementById('empDossierFiles').value = '';
-    updateDossierSelection();
     openModal('employeeModal');
 }
 
@@ -5065,8 +4527,6 @@ function openEditEmployeeModal(id) {
     document.getElementById('empDateNaissance').value = emp.dateNaissance || '';
     document.getElementById('empDateEmbauche').value = emp.dateEmbauche || '';
     document.getElementById('empContrat').value = emp.contrat || 'CDI';
-    document.getElementById('empDossierFiles').value = '';
-    updateDossierSelection();
     if (emp.photo) {
         document.getElementById('photoPreview').innerHTML = '<img src="' + emp.photo + '">';
     } else {
@@ -5085,7 +4545,7 @@ function previewPhoto(event) {
     reader.readAsDataURL(file);
 }
 
-async function saveEmployee() {
+function saveEmployee() {
     const editId = document.getElementById('empEditId').value;
     const nom = document.getElementById('empNom').value.trim();
     const matricule = document.getElementById('empMatricule').value.trim().toUpperCase();
@@ -5098,8 +4558,6 @@ async function saveEmployee() {
     const contrat = document.getElementById('empContrat').value;
     const photoEl = document.getElementById('photoPreview').querySelector('img');
     const photo = photoEl ? photoEl.src : '';
-    const dossierInput = document.getElementById('empDossierFiles');
-    const dossierFiles = dossierInput && dossierInput.files ? Array.from(dossierInput.files) : [];
 
     if (!nom || !matricule) {
         showToast('Veuillez remplir le nom et le matricule', 'error');
@@ -5128,7 +4586,6 @@ async function saveEmployee() {
             emp.dateEmbauche = dateEmbauche;
             emp.contrat = contrat;
             emp.photo = photo;
-            if (!Array.isArray(emp.dossierFiles)) emp.dossierFiles = [];
             savedEmployee = emp;
             showToast('Employe modifie avec succes');
         }
@@ -5144,20 +4601,11 @@ async function saveEmployee() {
             dateNaissance,
             dateEmbauche,
             contrat,
-            photo,
-            dossierFiles: []
+            photo
         };
         employees.push(savedEmployee);
         showToast('Employe ajoute avec succes');
     }
-
-    try {
-        if (savedEmployee && dossierFiles.length) {
-            showToast('Envoi du dossier en ligne...');
-            await saveEmployeeDossierFiles(savedEmployee.id, dossierFiles);
-            showToast('Dossier enregistre en ligne avec succes', 'success');
-        }
-    } catch (e) { console.error(e); showToast("Employe enregistre, mais impossible d'enregistrer le dossier en ligne. Verifiez la connexion et les regles Firebase Storage.", 'warning'); }
 
     saveData();
     closeModal('employeeModal');
@@ -5179,7 +4627,6 @@ function deleteEmployee(id) {
     document.getElementById('confirmMessage').textContent = 'Etes-vous sur de vouloir supprimer ' + emp.nom + ' ? Cette action est irreversible.';
     document.getElementById('confirmAction').onclick = function() {
         employees = employees.filter(e => e.id !== id);
-        deleteEmployeeDossierFiles(id).catch(() => {});
         saveData();
         closeModal('confirmModal');
         renderEmployees();
@@ -5327,7 +4774,7 @@ function renderEmployees() {
     );
 
     if (filtered.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="11"><div class="empty-state"><i class="fas fa-users"></i><p>Aucun employe trouve</p></div></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="10"><div class="empty-state"><i class="fas fa-users"></i><p>Aucun employe trouve</p></div></td></tr>';
         return;
     }
 
@@ -5353,7 +4800,6 @@ function renderEmployees() {
             '<td><span class="badge" style="background:var(--bg);color:var(--fg-muted);">' + emp.contrat + '</span></td>' +
             '<td>' + statusBadge + '</td>' +
             '<td><button class="btn-icon" title="Afficher le badge" onclick="openEmployeeBadgeById(\'' + emp.id + '\')"><i class="fas fa-id-badge"></i></button></td>' +
-            '<td><button class="btn-icon" title="Afficher le dossier" onclick="openEmployeeDossierById(\'' + emp.id + '\')"><i class="fas fa-folder-open"></i></button></td>' +
             '<td><div class="actions-cell">' +
                 '<button class="btn-icon edit" title="Modifier" onclick="openEditEmployeeModal(\'' + emp.id + '\')"><i class="fas fa-pen"></i></button>' +
                 '<button class="btn-icon delete" title="Supprimer" onclick="deleteEmployee(\'' + emp.id + '\')"><i class="fas fa-trash"></i></button>' +
@@ -6932,30 +6378,68 @@ function updateClock() {
 // ============================================================
 
 async function performLogin() {
-    const username=document.getElementById('loginUsername').value.trim();
-    const password=document.getElementById('loginPassword').value;
-    const errorEl=document.getElementById('loginError');
-    if(!username||!password){errorEl.textContent='Veuillez saisir votre username et votre mot de passe.';errorEl.classList.add('show');return;}
-    if(!initFirebase()){errorEl.textContent='Connexion en ligne indisponible.';errorEl.classList.add('show');return;}
-    try{
-        if(username.toLowerCase()===FIREBASE_ADMIN_EMAIL.toLowerCase()){
-            await firebaseAuth.signInWithEmailAndPassword(username,password);
-            currentUserRole='admin'; window.currentAppUserProfile=null; window.currentFirebaseUserProfile=null; localStorage.removeItem('pp_current_user_access');
-        }else{
-            if(firebaseAuth.currentUser && isFirebaseAdmin()) await firebaseAuth.signOut();
-            await ensureFirebaseSession('user');
-            const snap=await firebaseDb.ref(CLOUD_ROOT+'/appUsers/'+username.toLowerCase()).once('value');
-            const profile=snap.exists()?snap.val():null;
-            if(!profile||profile.active===false||!profile.passwordHash) throw new Error('Compte application introuvable');
-            const hash=await hashAppUserPassword(password);
-            if(hash!==profile.passwordHash) throw new Error('Mot de passe incorrect');
-            currentUserRole='user'; window.currentAppUserProfile=profile; window.currentFirebaseUserProfile=null;
-            localStorage.setItem('pp_current_user_access',JSON.stringify(profile.access||{}));
+    const username = document.getElementById('loginUsername').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    let settings = {};
+    try { settings = JSON.parse(localStorage.getItem('pp_settings')) || {}; } catch(e) {}
+
+    // Nouvelle version : migre uniquement les anciens identifiants par défaut admin/1234.
+    // Les identifiants personnalisés existants ne sont pas écrasés.
+    if (settings.loginUsername === 'admin' && settings.loginPassword === '1234') {
+        settings.loginUsername = 'Amine';
+        settings.loginPassword = 'amine@123';
+        try { localStorage.setItem('pp_settings', JSON.stringify(settings)); } catch(e) {}
+    }
+
+    const adminUsername = settings.loginUsername || 'Amine';
+    const adminPassword = settings.loginPassword || 'amine@123';
+    const userUsername = settings.userUsername || 'pointage';
+    const userPassword = settings.userPassword || '1234';
+    const errorEl = document.getElementById('loginError');
+
+    if (username === adminUsername && password === adminPassword) {
+        currentUserRole = 'admin';
+        if (!initFirebase()) {
+            errorEl.textContent = 'Connexion cloud indisponible.';
+            errorEl.classList.add('show');
+            return;
         }
-        sessionStorage.setItem('pp_authenticated','1'); sessionStorage.setItem('pp_user_role',currentUserRole);
-        document.getElementById('loginScreen').classList.add('hidden'); errorEl.classList.remove('show'); document.getElementById('loginPassword').value='';
-        applyUserAccess(); await initializeFirebaseSync(); navigate(currentUserRole==='admin'?'dashboard':'pointage');
-    }catch(e){console.warn('Connexion impossible:',e);errorEl.textContent='Username ou mot de passe incorrect.';errorEl.classList.add('show');document.getElementById('loginPassword').select();}
+        try {
+            await firebaseAuth.signInWithEmailAndPassword(FIREBASE_ADMIN_EMAIL, password);
+        } catch (e) {
+            errorEl.textContent = 'Compte Administrateur Firebase non connecté. Utilisez le même mot de passe que celui saisi ici, après avoir créé le compte Firebase.';
+            errorEl.classList.add('show');
+            return;
+        }
+    } else if (username === userUsername && password === userPassword) {
+        currentUserRole = 'user';
+        if (!initFirebase()) {
+            errorEl.textContent = 'Connexion cloud indisponible.';
+            errorEl.classList.add('show');
+            return;
+        }
+        try {
+            if (!firebaseAuth.currentUser) await firebaseAuth.signInAnonymously();
+        } catch (e) {
+            errorEl.textContent = 'Le pointage cloud est indisponible. Activez la connexion anonyme dans Firebase Authentication.';
+            errorEl.classList.add('show');
+            return;
+        }
+    } else {
+        errorEl.textContent = 'Identifiant ou mot de passe incorrect.';
+        errorEl.classList.add('show');
+        document.getElementById('loginPassword').select();
+        return;
+    }
+
+    sessionStorage.setItem('pp_authenticated', '1');
+    sessionStorage.setItem('pp_user_role', currentUserRole);
+    document.getElementById('loginScreen').classList.add('hidden');
+    errorEl.classList.remove('show');
+    document.getElementById('loginPassword').value = '';
+    applyUserAccess();
+    await initializeFirebaseSync();
+    navigate(currentUserRole === 'admin' ? 'dashboard' : 'pointage');
 }
 
 function logout() {
@@ -6964,11 +6448,6 @@ function logout() {
     sessionStorage.removeItem('pp_authenticated');
     sessionStorage.removeItem('pp_user_role');
     currentUserRole = 'admin';
-    window.currentFirebaseUserProfile = null;
-    window.currentAppUserProfile = null;
-    firebaseUsersListenerAttached = false;
-    appUsersListenerAttached = false;
-    localStorage.removeItem('pp_current_user_access');
     document.getElementById('loginScreen').classList.remove('hidden');
     document.getElementById('loginUsername').value = '';
     document.getElementById('loginPassword').value = '';
@@ -7069,8 +6548,6 @@ window.currentAppLogo = '';
 
 initTheme();
 loadData();
-try { loadSettings(); } catch(e) {}
-try { renderFirebaseUsers(); } catch(e) {}
 renderDashboard();
 renderBarcodeAttendanceTable();
 checkLogin();
