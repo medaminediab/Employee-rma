@@ -4784,7 +4784,7 @@ function exportEmployeesExcel() {
         ])
     ];
 
-    if (!createSimpleXlsx(rows, 'employes_' + todayStr() + '.xlsx', 'Employes')) return;
+    createSimpleXlsx(rows, 'employes_' + todayStr() + '.xlsx');
     showToast('Liste des employes exportee vers Excel');
 }
 
@@ -5624,60 +5624,26 @@ function exportTodayBarcodeAttendance() {
     showToast('Pointages du jour exportés vers Excel');
 }
 
-function createSimpleXlsx(rows, filename, sheetName = 'Feuille1') {
-    // Export XLSX standard via SheetJS pour une compatibilité maximale
-    // avec Microsoft Excel / Office 365, sans modifier les données de l'application.
-    if (typeof XLSX === 'undefined') {
-        showToast('Le module Excel est indisponible.', 'error');
-        return false;
-    }
-
-    try {
-        const normalizedRows = (rows || []).map(row =>
-            (row || []).map(value => value === null || value === undefined ? '' : String(value))
-        );
-
-        const workbook = XLSX.utils.book_new();
-        const worksheet = XLSX.utils.aoa_to_sheet(normalizedRows);
-
-        // Largeurs de colonnes automatiques raisonnables.
-        const maxCols = normalizedRows.reduce((m, r) => Math.max(m, r.length), 0);
-        worksheet['!cols'] = Array.from({ length: maxCols }, (_, colIndex) => {
-            let maxLength = 10;
-            normalizedRows.forEach(row => {
-                const value = String(row[colIndex] ?? '');
-                maxLength = Math.max(maxLength, Math.min(value.length + 2, 45));
-            });
-            return { wch: maxLength };
-        });
-
-        XLSX.utils.book_append_sheet(workbook, worksheet, String(sheetName).slice(0, 31) || 'Feuille1');
-
-        const xlsxBytes = XLSX.write(workbook, {
-            bookType: 'xlsx',
-            type: 'array',
-            compression: true
-        });
-
-        const blob = new Blob([xlsxBytes], {
-            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        });
-
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
-
-        return true;
-    } catch (e) {
-        console.error('Export Excel:', e);
-        showToast('Export Excel impossible : ' + (e.message || 'erreur de génération du fichier'), 'error');
-        return false;
-    }
+function createSimpleXlsx(rows, filename) {
+    const esc = v => String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;');
+    const col = i => { let n=i+1, out=''; while(n){const r=(n-1)%26;out=String.fromCharCode(65+r)+out;n=Math.floor((n-1)/26);}return out; };
+    let sheet='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>';
+    rows.forEach((row,ri)=>{const rr=ri+1;sheet+='<row r="'+rr+'">';row.forEach((v,ci)=>{sheet+='<c r="'+col(ci)+rr+'" t="inlineStr"><is><t>'+esc(v)+'</t></is></c>';});sheet+='</row>';});
+    sheet+='</sheetData><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" state="frozen"/></sheetView></sheetViews></worksheet>';
+    const files=[
+      {name:'[Content_Types].xml',content:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>'},
+      {name:'_rels/.rels',content:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'},
+      {name:'xl/workbook.xml',content:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Pointages du jour" sheetId="1" r:id="rId1"/></sheets></workbook>'},
+      {name:'xl/_rels/workbook.xml.rels',content:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>'},
+      {name:'xl/worksheets/sheet1.xml',content:sheet}
+    ];
+    const enc=new TextEncoder(); const u16=v=>{const a=new Uint8Array(2),d=new DataView(a.buffer);d.setUint16(0,v,true);return a;}; const u32=v=>{const a=new Uint8Array(4),d=new DataView(a.buffer);d.setUint32(0,v>>>0,true);return a;};
+    const crc32=b=>{let c=0xFFFFFFFF;for(let i=0;i<b.length;i++){c^=b[i];for(let j=0;j<8;j++)c=(c>>>1)^(0xEDB88320&-(c&1));}return(c^0xFFFFFFFF)>>>0;};
+    const join=parts=>{let n=parts.reduce((x,y)=>x+y.length,0),o=new Uint8Array(n),p=0;parts.forEach(x=>{o.set(x,p);p+=x.length;});return o;};
+    let locals=[],centrals=[],offset=0;
+    files.forEach(f=>{const name=enc.encode(f.name),data=enc.encode(f.content),crc=crc32(data);const lh=join([u32(0x04034B50),u16(20),u16(0x0800),u16(0),u16(0),u16(0),u32(crc),u32(data.length),u32(data.length),u16(name.length),u16(0),name,data]);locals.push(lh);const ch=join([u32(0x02014B50),u16(20),u16(20),u16(0x0800),u16(0),u16(0),u16(0),u32(crc),u32(data.length),u32(data.length),u16(name.length),u16(0),u16(0),u16(0),u16(0),u32(0),u32(offset),name]);centrals.push(ch);offset+=lh.length;});
+    const ld=join(locals),cd=join(centrals),end=join([u32(0x06054B50),u16(0),u16(0),u16(files.length),u16(files.length),u32(cd.length),u32(ld.length),u16(0)]);
+    const blob=new Blob([join([ld,cd,end])],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 
 // ============================================================
@@ -6020,26 +5986,20 @@ function exportHistory() {
 
     Object.keys(pointages).forEach(date => {
         const dayP = pointages[date];
-
         Object.keys(dayP).forEach(empId => {
-            const emp = employees.find(e => e.id === empId);
-            if (!emp) return;
-
             const p = dayP[empId];
-            if (!p || !p.entree) return;
-
-            if (!overtimeByEmployee[empId]) overtimeByEmployee[empId] = 0;
-            overtimeByEmployee[empId] += calcOvertimeMinutes(p.entree, p.sortie);
+            if (p && p.entree) {
+                if (!overtimeByEmployee[empId]) overtimeByEmployee[empId] = 0;
+                overtimeByEmployee[empId] += calcOvertimeMinutes(p.entree, p.sortie);
+            }
         });
     });
 
     Object.keys(pointages).forEach(date => {
         const dayP = pointages[date];
-
         Object.keys(dayP).forEach(empId => {
             const emp = employees.find(e => e.id === empId);
             if (!emp) return;
-
             const p = dayP[empId];
             if (!p || !p.entree) return;
 
@@ -6059,13 +6019,217 @@ function exportHistory() {
         });
     });
 
-    if (rows.length === 1) {
-        showToast('Aucun historique à exporter.', 'warning');
-        return;
+    // Export Excel réel au format .xlsx.
+    // Le fichier est construit directement en ZIP/XLSX afin de rester
+    // compatible hors connexion et de produire un vrai fichier .xlsx.
+    function escapeXml(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&apos;');
     }
 
-    if (!createSimpleXlsx(rows, 'historique_pointage.xlsx', 'Historique')) return;
-    showToast('Historique exporté en Excel');
+    function crc32(bytes) {
+        let crc = 0xFFFFFFFF;
+        for (let i = 0; i < bytes.length; i++) {
+            crc ^= bytes[i];
+            for (let j = 0; j < 8; j++) {
+                crc = (crc >>> 1) ^ (0xEDB88320 & -(crc & 1));
+            }
+        }
+        return (crc ^ 0xFFFFFFFF) >>> 0;
+    }
+
+    function u16(value) {
+        const a = new Uint8Array(2);
+        const v = new DataView(a.buffer);
+        v.setUint16(0, value, true);
+        return a;
+    }
+
+    function u32(value) {
+        const a = new Uint8Array(4);
+        const v = new DataView(a.buffer);
+        v.setUint32(0, value >>> 0, true);
+        return a;
+    }
+
+    function concatBytes(parts) {
+        const total = parts.reduce((n, part) => n + part.length, 0);
+        const out = new Uint8Array(total);
+        let offset = 0;
+        parts.forEach(part => {
+            out.set(part, offset);
+            offset += part.length;
+        });
+        return out;
+    }
+
+    function zipStore(files) {
+        const encoder = new TextEncoder();
+        const localParts = [];
+        const centralParts = [];
+        let offset = 0;
+
+        files.forEach(file => {
+            const name = encoder.encode(file.name);
+            const data = encoder.encode(file.content);
+            const crc = crc32(data);
+
+            const localHeader = concatBytes([
+                u32(0x04034B50),
+                u16(20),
+                u16(0x0800),
+                u16(0),
+                u16(0),
+                u16(0),
+                u32(crc),
+                u32(data.length),
+                u32(data.length),
+                u16(name.length),
+                u16(0),
+                name,
+                data
+            ]);
+            localParts.push(localHeader);
+
+            const centralHeader = concatBytes([
+                u32(0x02014B50),
+                u16(20),
+                u16(20),
+                u16(0x0800),
+                u16(0),
+                u16(0),
+                u16(0),
+                u32(crc),
+                u32(data.length),
+                u32(data.length),
+                u16(name.length),
+                u16(0),
+                u16(0),
+                u16(0),
+                u16(0),
+                u32(0),
+                u32(offset),
+                name
+            ]);
+            centralParts.push(centralHeader);
+
+            offset += localHeader.length;
+        });
+
+        const centralDirectory = concatBytes(centralParts);
+        const localData = concatBytes(localParts);
+
+        const endRecord = concatBytes([
+            u32(0x06054B50),
+            u16(0),
+            u16(0),
+            u16(files.length),
+            u16(files.length),
+            u32(centralDirectory.length),
+            u32(localData.length),
+            u16(0)
+        ]);
+
+        return concatBytes([localData, centralDirectory, endRecord]);
+    }
+
+    function columnName(index) {
+        let name = '';
+        let n = index + 1;
+        while (n > 0) {
+            const r = (n - 1) % 26;
+            name = String.fromCharCode(65 + r) + name;
+            n = Math.floor((n - 1) / 26);
+        }
+        return name;
+    }
+
+    let sheetXml =
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" ' +
+        'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
+        '<sheetData>';
+
+    rows.forEach((row, rowIndex) => {
+        const excelRow = rowIndex + 1;
+        sheetXml += '<row r="' + excelRow + '">';
+        row.forEach((cell, cellIndex) => {
+            const ref = columnName(cellIndex) + excelRow;
+            sheetXml += '<c r="' + ref + '" t="inlineStr"><is><t>' +
+                escapeXml(cell) +
+                '</t></is></c>';
+        });
+        sheetXml += '</row>';
+    });
+
+    sheetXml +=
+        '</sheetData>' +
+        '<sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" ' +
+        'activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>' +
+        '</worksheet>';
+
+    const files = [
+        {
+            name: '[Content_Types].xml',
+            content:
+                '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+                '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+                '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+                '<Default Extension="xml" ContentType="application/xml"/>' +
+                '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>' +
+                '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>' +
+                '</Types>'
+        },
+        {
+            name: '_rels/.rels',
+            content:
+                '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+                '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+                '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>' +
+                '</Relationships>'
+        },
+        {
+            name: 'xl/workbook.xml',
+            content:
+                '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+                '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" ' +
+                'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
+                '<sheets><sheet name="Historique" sheetId="1" r:id="rId1"/></sheets>' +
+                '</workbook>'
+        },
+        {
+            name: 'xl/_rels/workbook.xml.rels',
+            content:
+                '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+                '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+                '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>' +
+                '</Relationships>'
+        },
+        {
+            name: 'xl/worksheets/sheet1.xml',
+            content: sheetXml
+        }
+    ];
+
+    const xlsxBytes = zipStore(files);
+    const blob = new Blob([xlsxBytes], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+    window.__pointageProLastHistoryExcelBlob = blob;
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'historique_pointage.xlsx';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+    showToast('Historique exporte en Excel');
 }
 
 // Importer un pointage Excel local dans l'historique
