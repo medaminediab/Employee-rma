@@ -1583,38 +1583,6 @@
 
         .login-error.show { display: block; }
 
-        /* === AJOUT : gestion des stocks === */
-        .stock-summary-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 16px;
-            margin-bottom: 20px;
-        }
-        .stock-form-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 14px;
-        }
-        .stock-low {
-            color: var(--danger);
-            font-weight: 700;
-        }
-        .stock-ok {
-            color: var(--accent);
-            font-weight: 600;
-        }
-        .stock-actions {
-            display: flex;
-            gap: 6px;
-            flex-wrap: wrap;
-        }
-        @media (max-width: 900px) {
-            .stock-summary-grid { grid-template-columns: repeat(2, 1fr); }
-        }
-        @media (max-width: 600px) {
-            .stock-summary-grid, .stock-form-grid { grid-template-columns: 1fr; }
-        }
-
         @media (max-width: 1200px) {
             .stats-grid { grid-template-columns: repeat(2, 1fr); }
             .content-grid { grid-template-columns: 1fr; }
@@ -2476,11 +2444,11 @@
             <i class="fas fa-clock"></i> Pointage
             <span class="nav-badge" id="activeCount">0</span>
         </div>
-        <div class="nav-item" data-page="employes" onclick="navigate('employes')">
-            <i class="fas fa-users"></i> Employes
-        </div>
         <div class="nav-item" data-page="stocks" onclick="navigate('stocks')">
             <i class="fas fa-boxes"></i> Gestion des stocks
+        </div>
+        <div class="nav-item" data-page="employes" onclick="navigate('employes')">
+            <i class="fas fa-users"></i> Employes
         </div>
 
         <div class="nav-label">Donnees</div>
@@ -3730,7 +3698,6 @@ function getSettingsSafeForCloud() {
 function applyCloudData(d) {
     if (!d) return;
     if (Array.isArray(d.employees)) employees = d.employees;
-    if (Array.isArray(d.stocks)) { stocks = d.stocks; try { localStorage.setItem(STOCK_STORAGE_KEY, JSON.stringify(stocks)); } catch(e) {} }
     if (d.pointages && typeof d.pointages === 'object') pointages = d.pointages;
     if (Array.isArray(d.activities)) activities = d.activities;
     if (d.settings && typeof d.settings === 'object') {
@@ -3762,7 +3729,6 @@ async function saveCloudData() {
         if (isFirebaseAdmin()) {
             updates = {
                 employees: employees || [],
-                stocks: stocks || [],
                 pointages: pointages || {},
                 activities: activities || [],
                 settings: getSettingsSafeForCloud(),
@@ -3771,7 +3737,6 @@ async function saveCloudData() {
         } else {
             // Un utilisateur Pointage ne transmet jamais employees/settings.
             updates = {
-                stocks: stocks || [],
                 pointages: pointages || {},
                 activities: activities || {},
                 updatedAt: Date.now()
@@ -3867,7 +3832,7 @@ let currentUserId = '';
 let managedUsers = [];
 
 function defaultUserAccess() {
-    return { dashboard:false, pointage:true, employes:false, stocks:true, historique:false, rapports:false, parametres:false };
+    return { dashboard:false, pointage:true, employes:false, stocks:false, historique:false, rapports:false, parametres:false };
 }
 
 function normalizeManagedUsers(settings) {
@@ -4204,20 +4169,51 @@ function loadStocks() {
     return stocks;
 }
 
+let stockFirebaseListenerAttached = false;
+let stockFirebaseWriting = false;
+
 async function saveStocks() {
+    try { localStorage.setItem(STOCK_STORAGE_KEY, JSON.stringify(stocks)); }
+    catch (e) { console.warn('Impossible d’enregistrer les stocks localement :', e); }
+    if (!firebaseReady || !firebaseDb || !firebaseAuth || !firebaseAuth.currentUser) return false;
     try {
-        localStorage.setItem(STOCK_STORAGE_KEY, JSON.stringify(stocks));
+        stockFirebaseWriting = true;
+        await firebaseDb.ref(CLOUD_ROOT + '/stocks').set(stocks || []);
+        return true;
     } catch (e) {
-        console.warn('Impossible d’enregistrer les stocks :', e);
-    }
+        console.warn('Écriture Firebase des stocks impossible :', e);
+        showToast('Stock enregistré localement, mais synchronisation Firebase échouée.', 'warning');
+        return false;
+    } finally { stockFirebaseWriting = false; }
+}
+
+async function initializeStockFirebaseSync() {
     try {
-        if (typeof saveCloudData === 'function' && firebaseReady && firebaseDb && firebaseAuth && firebaseAuth.currentUser) {
-            const ok = await saveCloudData();
-            if (!ok) showToast('Stock enregistré localement, mais synchronisation Firebase échouée.', 'warning');
+        if (!firebaseReady) initFirebase();
+        if (!firebaseReady || !firebaseDb || !firebaseAuth || !firebaseAuth.currentUser) return;
+        const ref = firebaseDb.ref(CLOUD_ROOT + '/stocks');
+        const snap = await ref.once('value');
+        if (snap.exists()) {
+            const remote = snap.val();
+            stocks = Array.isArray(remote) ? remote : Object.values(remote || {});
+            localStorage.setItem(STOCK_STORAGE_KEY, JSON.stringify(stocks));
+            renderStocks();
+        } else if (isFirebaseAdmin()) {
+            await saveStocks();
+        }
+        if (!stockFirebaseListenerAttached) {
+            stockFirebaseListenerAttached = true;
+            ref.on('value', function(snapshot) {
+                if (stockFirebaseWriting) return;
+                if (!snapshot.exists()) return;
+                const remote = snapshot.val();
+                stocks = Array.isArray(remote) ? remote : Object.values(remote || {});
+                try { localStorage.setItem(STOCK_STORAGE_KEY, JSON.stringify(stocks)); } catch(e) {}
+                renderStocks();
+            });
         }
     } catch (e) {
         console.warn('Synchronisation Firebase des stocks impossible :', e);
-        showToast('Stock enregistré localement, mais synchronisation Firebase échouée.', 'warning');
     }
 }
 
@@ -5630,8 +5626,8 @@ function openAddEmployeeModal() {
     document.getElementById('empNom').value = '';
     document.getElementById('empMatricule').value = getNextEmployeeMatricule();
     document.getElementById('empCIN').value = '';
-    document.getElementById('empCNSS').value = '';
     document.getElementById('empTel').value = '';
+    document.getElementById('empCNSS').value = '';
     document.getElementById('empDept').value = 'Génie civil';
     document.getElementById('empPoste').value = '';
     document.getElementById('empDateNaissance').value = '';
@@ -5652,8 +5648,8 @@ function openEditEmployeeModal(id) {
     document.getElementById('empNom').value = emp.nom;
     document.getElementById('empMatricule').value = emp.matricule;
     document.getElementById('empCIN').value = emp.cin || '';
-    document.getElementById('empCNSS').value = emp.cnss || '';
     document.getElementById('empTel').value = emp.tel || '';
+    document.getElementById('empCNSS').value = emp.cnss || '';
     document.getElementById('empDept').value = emp.dept || 'Génie civil';
     document.getElementById('empPoste').value = emp.poste || '';
     document.getElementById('empDateNaissance').value = emp.dateNaissance || '';
@@ -5684,8 +5680,8 @@ async function saveEmployee() {
     const nom = document.getElementById('empNom').value.trim();
     const matricule = document.getElementById('empMatricule').value.trim().toUpperCase();
     const cin = document.getElementById('empCIN').value.trim();
-    const cnss = document.getElementById('empCNSS').value.trim();
     const tel = document.getElementById('empTel').value.trim();
+    const cnss = document.getElementById('empCNSS').value.trim();
     const dept = document.getElementById('empDept').value;
     const poste = document.getElementById('empPoste').value.trim();
     const dateNaissance = document.getElementById('empDateNaissance').value;
@@ -5719,8 +5715,8 @@ async function saveEmployee() {
             emp.nom = nom;
             emp.matricule = matricule;
             emp.cin = cin;
-            emp.cnss = cnss;
             emp.tel = tel;
+            emp.cnss = cnss;
             emp.dept = dept;
             emp.poste = poste;
             emp.dateNaissance = dateNaissance;
@@ -5927,7 +5923,7 @@ function renderEmployees() {
     );
 
     if (filtered.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="12"><div class="empty-state"><i class="fas fa-users"></i><p>Aucun employe trouve</p></div></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="10"><div class="empty-state"><i class="fas fa-users"></i><p>Aucun employe trouve</p></div></td></tr>';
         return;
     }
 
@@ -5947,7 +5943,6 @@ function renderEmployees() {
             '<td><div class="emp-cell"><div class="emp-avatar" style="background:' + color + '">' + avatarContent + '</div><div><div class="emp-name">' + emp.nom + '</div></div></div></td>' +
             '<td style="font-family:Space Grotesk,monospace;font-weight:600;color:var(--accent);font-size:12px;">' + emp.matricule + '</td>' +
             '<td>' + emp.cin + '</td>' +
-            '<td>' + (emp.cnss || '') + '</td>' +
             '<td>' + emp.dept + '</td>' +
             '<td>' + emp.poste + '</td>' +
             '<td>' + emp.tel + '</td>' +
@@ -7559,6 +7554,7 @@ async function performLogin() {
     document.getElementById('loginPassword').value = '';
     applyUserAccess();
     await initializeFirebaseSync();
+    await initializeStockFirebaseSync();
     const access = getCurrentUserAccess();
     const firstPage = ['dashboard','pointage','employes','stocks','historique','rapports','parametres'].find(p => access[p]) || 'pointage';
     navigate(firstPage);
@@ -7587,7 +7583,7 @@ function checkLogin() {
         try { managedUsers = normalizeManagedUsers(JSON.parse(localStorage.getItem('pp_settings') || '{}')); } catch(e) { managedUsers = []; }
         loginScreen.classList.add('hidden');
         applyUserAccess();
-        setTimeout(function() { initializeFirebaseSync(); }, 0);
+        setTimeout(function() { initializeFirebaseSync(); initializeStockFirebaseSync(); }, 0);
         const activePage = document.querySelector('.page.active');
         const activePageName = activePage ? activePage.id.replace('page-', '') : '';
         if (!getCurrentUserAccess()[activePageName]) navigate('pointage');
