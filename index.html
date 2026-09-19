@@ -3730,6 +3730,7 @@ function getSettingsSafeForCloud() {
 function applyCloudData(d) {
     if (!d) return;
     if (Array.isArray(d.employees)) employees = d.employees;
+    if (Array.isArray(d.stocks)) { stocks = d.stocks; try { localStorage.setItem(STOCK_STORAGE_KEY, JSON.stringify(stocks)); } catch(e) {} }
     if (d.pointages && typeof d.pointages === 'object') pointages = d.pointages;
     if (Array.isArray(d.activities)) activities = d.activities;
     if (d.settings && typeof d.settings === 'object') {
@@ -3761,6 +3762,7 @@ async function saveCloudData() {
         if (isFirebaseAdmin()) {
             updates = {
                 employees: employees || [],
+                stocks: stocks || [],
                 pointages: pointages || {},
                 activities: activities || [],
                 settings: getSettingsSafeForCloud(),
@@ -3769,6 +3771,7 @@ async function saveCloudData() {
         } else {
             // Un utilisateur Pointage ne transmet jamais employees/settings.
             updates = {
+                stocks: stocks || [],
                 pointages: pointages || {},
                 activities: activities || {},
                 updatedAt: Date.now()
@@ -4201,11 +4204,20 @@ function loadStocks() {
     return stocks;
 }
 
-function saveStocks() {
+async function saveStocks() {
     try {
         localStorage.setItem(STOCK_STORAGE_KEY, JSON.stringify(stocks));
     } catch (e) {
         console.warn('Impossible d’enregistrer les stocks :', e);
+    }
+    try {
+        if (typeof saveCloudData === 'function' && firebaseReady && firebaseDb && firebaseAuth && firebaseAuth.currentUser) {
+            const ok = await saveCloudData();
+            if (!ok) showToast('Stock enregistré localement, mais synchronisation Firebase échouée.', 'warning');
+        }
+    } catch (e) {
+        console.warn('Synchronisation Firebase des stocks impossible :', e);
+        showToast('Stock enregistré localement, mais synchronisation Firebase échouée.', 'warning');
     }
 }
 
@@ -4506,13 +4518,23 @@ function renderStocks() {
             '<td>' + escapeHtml(item.unite || '') + '</td>' +
             '<td>' + escapeHtml(item.emplacement || '') + '</td>' +
             '<td><div class="stock-actions">' +
-                '<button class="btn-icon" title="Entrée / sortie" onclick="openStockMovementModal(' + JSON.stringify(item.id) + ')"><i class="fas fa-exchange-alt"></i></button>' +
-                '<button class="btn-icon edit" title="Modifier" onclick="openEditStockModal(' + JSON.stringify(item.id) + ')"><i class="fas fa-edit"></i></button>' +
-                '<button class="btn-icon delete" title="Supprimer" onclick="deleteStock(' + JSON.stringify(item.id) + ')"><i class="fas fa-trash"></i></button>' +
+                '<button type="button" class="btn-icon" title="Entrée / sortie" data-stock-action="movement" data-stock-id="' + escapeHtml(String(item.id)) + '"><i class="fas fa-exchange-alt"></i></button>' +
+                '<button type="button" class="btn-icon edit" title="Modifier" data-stock-action="edit" data-stock-id="' + escapeHtml(String(item.id)) + '"><i class="fas fa-edit"></i></button>' +
+                '<button type="button" class="btn-icon delete" title="Supprimer" data-stock-action="delete" data-stock-id="' + escapeHtml(String(item.id)) + '"><i class="fas fa-trash"></i></button>' +
             '</div></td>' +
             '</tr>';
     }).join('');
 }
+
+document.addEventListener('click', function(e) {
+    const btn = e.target.closest('[data-stock-action][data-stock-id]');
+    if (!btn) return;
+    const id = btn.getAttribute('data-stock-id');
+    const action = btn.getAttribute('data-stock-action');
+    if (action === 'movement') openStockMovementModal(id);
+    else if (action === 'edit') openEditStockModal(id);
+    else if (action === 'delete') deleteStock(id);
+});
 
 loadStocks();
 
